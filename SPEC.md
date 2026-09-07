@@ -744,6 +744,12 @@ document, caught on this pass and fixed here:**
    **illustrative of the shape of the output, not a forecast of its scale** — the actual
    numbers get corrected the moment a real run exists to measure, the same standard already
    applied to every other unvalidated figure in this document (§12).
+3. **The example itself named only AWS in its "connecting to your cloud" line, on a tool
+   whose entire premise is not favoring one cloud.** Caught late, on a final pass, and fixed
+   here and on the live website — worth naming because it's exactly the kind of
+   self-contradiction this document exists to catch everywhere else, and it slipped past
+   several earlier reviews before someone actually looked at what the example was showing
+   rather than what it was supposed to demonstrate.
 
 ```
 $ oporder scan .
@@ -751,9 +757,9 @@ $ oporder scan .
   OpOrder v0.1.0 · scanning ./ (git: main @ 4f2a91c)
 
   ⠋ Reading code................ 142 services detected
-  ⠋ Connecting to AWS........... read-only, us-east-1 + 3 more regions
+  ⠋ Connecting to your cloud.... AWS, GCP, Azure & Cloudflare — read-only
   ⠋ Fanning out assessment...... 142 workers, 3 fresh verifiers each
-  ⠋ Pricing (live)............... AWS Price List API, GCP Billing Catalog, Azure Retail Prices
+  ⠋ Pricing (live)............... AWS · GCP · Azure queried live, Cloudflare directional (§12)
   ⠋ Synthesizing report.........
 
   Done in 4m12s · $0.38 in LLM spend · full report: ./oporder-report/
