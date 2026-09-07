@@ -390,6 +390,30 @@ scoring logic to be — not "trust that we build this well," but the actual scri
 in the repo. This is also the honest answer to "is this a good demonstration of agentic
 engineering practice": the demonstration is the commit history, not a claim made about it.
 
+### 4.7a The actual operating agreement for autonomous building
+
+Stated explicitly, since "build this autonomously" needs a real definition, not an assumption:
+
+- **Routine work happens without a check-in**: commit messages, file structure, which test to
+  write next — decided and executed, per CONTRIBUTING.md's own standards, not asked about.
+- **A genuine blocker still gets flagged, not silently guessed past.** The two real blockers
+  this project has right now: no live AWS/GCP/Azure/Cloudflare credentials to validate §5.0's
+  correlation logic against reality, and no LLM API key configured for anything that needs one
+  per §4.6. Both get worked around as far as possible — §7's recorded-fixture mode exists
+  specifically so development doesn't stall on the first one — and flagged, once, when
+  fixture-based progress genuinely runs out and only a live account unblocks the next step.
+- **Notification, not email.** There's no email capability available in this environment — a
+  desktop/phone notification serves the same purpose (pulling attention when something's
+  actually worth coming back for) and is what's used instead, for a real blocker or a
+  finished milestone, never for routine progress.
+- **Work lands in PR-sized, committable increments**, matching CONTRIBUTING.md's own
+  contribution standard — not one large uncommitted change, so a failure partway through
+  loses minutes of work, not the whole session's output.
+- **Session/context limits are handled by the harness's own compaction, not a precise
+  self-reported countdown.** No tool exists to measure "tokens remaining" exactly; the honest
+  commitment is a notification at a natural milestone boundary or a genuine blocker, not a
+  promise to predict exhaustion in advance.
+
 ---
 
 ## 5. The assessment engine
