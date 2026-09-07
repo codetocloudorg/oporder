@@ -16,6 +16,14 @@ more money depending on which answer comes out.
 That's the whole product. Everything below is how it gets built without quietly becoming
 something else.
 
+The point of building it isn't to hand organizations a different authority to defer to. It's
+to put the engineer, the developer, the organization back in the driving seat — with a real,
+evidenced choice about what's actually right for their situation, instead of the choice a
+vendor with something to sell them already made on their behalf. "Free to choose" only means
+something if the choice is backed by the same rigor a hyperscaler's own tooling has, which is
+why §13 holds this project to real versioning, release, and governance discipline rather than
+letting "it's open source" stand in for engineering seriousness.
+
 ---
 
 ## 1. Non-negotiable design principles
@@ -33,6 +41,7 @@ differentiator, and neither is one you can quietly abandon under commercial pres
 | **A worker never grades its own homework.** Every finding gets checked by a fresh-context agent before it reaches the report. | No self-verification loops. See [[08-Harness-and-Loops / 09-Agent-Design-Patterns / 20-Graph-Engineering]] pattern already validated in the Code To Cloud vault. |
 | **A contributor should be able to submit a real PR after reading one file.** Architectural elegance that requires understanding four subsystems before anyone can help is a tax on exactly the community growth this project depends on. | No feature ships behind more indirection than it currently needs. See §4.2 — the fancier architecture is *earned*, not assumed from day one. |
 | **Vendor-neutrality applies to the tooling ecosystem too, not just the cloud.** The plain CLI has to work with zero AI agent host installed. | No feature that only works inside one vendor's agent product (Claude Code, Cursor, etc.) is allowed to become load-bearing. See §4.3. |
+| **Every recommendation shows pros and cons, never a bare verdict — and every surface looks considered, not default-tool ugly.** | No CLI output, TUI view, or report ships that only shows the "why we're right" side of a call, or that reads like an afternoon's unstyled output. See §6. |
 
 ---
 
@@ -299,11 +308,28 @@ providers update their own frameworks.
 
 ### 5.5 SDLC maturity scoring
 
-A lens, not a platform (see §1 principle on assess/execute separation, and the earlier
-decision in this project's history to keep SDLC *guidance* in scope while ruling out SDLC
-*execution*). Feeds the effort estimate and the confidence level on any Refactor/Rearchitect
-call — a team with no tests attempting a rearchitect is a materially different risk profile
-than one with green CI, and the report says so.
+A lens, not a platform — the line drawn earlier in this project's history still holds: SDLC
+*guidance* is in scope, SDLC *execution* never is (§1). OpOrder never touches a client's
+pipeline; it reports on the one that's already there, with the same evidence discipline as
+every other pillar in this spec.
+
+**What gets scored**, each dimension independently, each with the evidence shown:
+
+| Dimension | What's checked | Why it matters to the recommendation |
+|---|---|---|
+| **Version control hygiene** | Branch protection, trunk-based vs. long-lived branches, commit/PR conventions | A team without branch protection attempting a Rearchitect is a materially higher-risk bet than one with it — the report says so, not just implies it |
+| **CI presence and quality** | Does CI exist, does it gate merges, how long does it take, is it actually green or perpetually red | Red or absent CI isn't a style preference, it's a direct input to the effort estimate (§5.6) and the debt-delta risk (§5.8) |
+| **Test pyramid shape** | Unit vs. integration vs. end-to-end ratio, measurable coverage where available | The single strongest predictor of whether a Refactor/Rearchitect is likely to land clean or regress silently |
+| **Release cadence and rollback readiness** | How often does this ship, is there a documented or practiced rollback path | A team that ships weekly with a working rollback carries migration risk very differently than one that ships quarterly with none |
+| **Code review practice** | PR review requirements, average time-to-merge, whether reviews are substantive or rubber-stamped where inferable from history | Feeds confidence level, not a pass/fail gate — this is the softest signal and the report treats it that way |
+
+**Output**: `sdlc-maturity.json` (already in the tree, §3), one score per dimension, each
+traceable to the exact repository signal that produced it — same "no opaque model call
+standing in for a documented rubric" discipline as §1 applies everywhere else. This scorecard
+directly feeds two other outputs, not just itself: the effort estimate (§5.6) and the
+technical debt trajectory (§5.8) both read from it rather than re-deriving their own version
+of "is this team's process healthy," which would risk the two disagreeing with each other for
+no good reason.
 
 ### 5.6 Cost engine
 
@@ -383,10 +409,19 @@ that nobody told them a cheap option was also one that fixed nothing.
 
 ---
 
-## 6. CLI UX — the gold standard bar
+## 6. CLI, TUI, and report design — the gold standard bar
 
-The bar: a developer opens this tool for a five-minute look and it's still the thing they
-reach for a year later. Concretely:
+The bar, stated plainly: **every surface this project produces — the CLI output, the
+interactive terminal view, and the generated report — has to look considered, not
+default-tool ugly, and every recommendation has to show its pros and cons, never a bare
+verdict.** This isn't a polish pass at the end. It's as load-bearing as the rubric itself,
+because a tool whose whole pitch is "trust our honesty" loses credibility fast if its output
+looks like an afternoon's `fmt.Println` work.
+
+### 6.1 The scan command
+
+A developer opens this tool for a five-minute look and it's still the thing they reach for a
+year later. Concretely:
 
 ```
 $ oporder scan .
@@ -420,6 +455,84 @@ Principles this enforces:
 - **Every subcommand composes**: `oporder scan`, `oporder report`, `oporder waf`,
   `oporder cost` all work standalone against a previous scan's cache, not just as one
   monolithic run.
+
+### 6.2 The interactive TUI — `oporder browse`
+
+A one-shot terminal log is fine for a CI pipeline; it's the wrong surface for a human
+actually deciding what to do with 142 scored workloads. `oporder browse` opens a full
+terminal UI against the last scan's cache — built on **Bubble Tea + Lip Gloss** (the Charm
+ecosystem), the same Go-native TUI toolkit behind tools like `lazygit` and `gh dash`, chosen
+for the same reason Go itself was chosen in §4.1: no new runtime dependency, cross-compiles
+cleanly to every platform in §4.4.
+
+The interaction model deliberately mirrors the one already validated in Claude Code's own
+`/workflows` progress view (§9 of the Code To Cloud vault's Graph Engineering research):
+arrow keys to move between workloads, `Enter` to drill into a recommendation, `Esc` to back
+out, `f` to filter by R or by WAF pillar score. That pattern is proven — people already know
+how to use it the first time they see it, which matters more here than inventing a novel
+interaction model would.
+
+```
+┌─ OpOrder · 142 workloads ─────────────────────────────── filter: [all] ─┐
+│                                                                          │
+│  ▸ billing-service        REFACTOR    debt: ↓ mitigated    conf: high   │
+│    payments-api           REPLATFORM  debt: → unchanged    conf: high   │
+│    legacy-reports         REHOST      debt: → unchanged    conf: med    │
+│    user-uploads           RETIRE      debt: ✓ eliminated   conf: high   │
+│    ...                                                                  │
+│                                                                          │
+├─ billing-service ────────────────────────────────────────────────────── │
+│  PROS                          │  CONS                                  │
+│  + Removes 3 EOL dependencies  │  − 6-week estimated effort              │
+│  + Fixes the untested payment  │  − Team has no prior Go experience      │
+│    reconciliation path         │  − Debt reduction depends on review     │
+│  + $340/mo hosting saving      │    discipline holding under deadline    │
+└──────────────────────────────────────────────────────────────────────── ┘
+  ↑↓ select · enter expand · f filter · w waf detail · q quit
+```
+
+Every recommendation view shows pros and cons side by side, by construction — not because a
+template happens to include both columns, but because §5.3's rubric and §5.8's debt model
+already produce evidence for and against each call, and hiding either half would be the same
+kind of quiet bias §1 rules out for the scoring itself.
+
+### 6.3 Report visual design
+
+The Markdown report (§3) stays the source of truth — git-diffable, readable with no tooling,
+never held hostage behind a renderer. Alongside it, `oporder report --html` generates a
+static, self-contained report site: real typography, a cost-comparison chart per workload
+across every viable destination, a WAF pillar radar chart, and the debt trajectory from §5.8
+rendered as a simple up/flat/down indicator rather than a wall of prose — legible in a
+five-minute skim by someone who wasn't in the room for the scan, which is the actual use
+case (a decision-maker forwarded the report, not the person who ran the command).
+
+Every design choice here follows the same underlying rule as the palette and accessibility
+guidance already established for data visualization work in the Code To Cloud practice:
+color communicates meaning (an R with rising debt risk reads differently than one that's
+clean), never decoration, and the report is fully legible in both light and dark terminals
+and browsers — a tool this proud of showing its own reasoning doesn't get to be unreadable
+in half the environments it's opened in.
+
+### 6.4 😈 Devil's advocate: "beat the hyperscalers on output" is a claim, not evidence yet
+
+Worth being honest about what hasn't actually been checked: this spec asserts OpOrder's
+output should look and read better than AWS Transform's, Copilot app modernization's, or
+watsonx's — but nothing in this project's research so far actually benchmarked their real
+report output, only their functional capability. Before that claim survives contact with a
+skeptical reviewer, it needs an actual side-by-side: screenshots of what those tools produce
+today, compared honestly against an early OpOrder report, not an assumption that enterprise
+tooling is automatically uglier. If it turns out one of them already clears this bar, say so
+in the open rather than quietly drop the comparison.
+
+### 6.5 What "real value like Alberta" means for report writing specifically
+
+Alberta's own output wasn't impressive because of formatting — it was impressive because
+every claim traced to an exact file and line number, across 466 million lines, with nothing
+asserted that couldn't be checked (§2.0). That's the actual bar "gorgeous" has to serve, not
+compete with: **visual polish earns the report a first look; cited, checkable evidence is
+what earns it being believed.** A beautifully designed report full of generic AI prose is a
+worse outcome than a plain one with exact citations — if the two ever trade off against each
+other during implementation, evidence wins, every time.
 
 ---
 
@@ -486,8 +599,8 @@ tabs:
 | Phase | Scope | Architecture | Exit criteria |
 |---|---|---|---|
 | v0.1 | AWS only. Live inventory + diagram + plain-English SITUATION.md. No Mission/Execution yet. | Plain Go CLI, direct AWS SDK calls — no MCP/skill/workflow split (§4.2) | A stranger can run it against a real AWS account and trust the diagram, and a Go developer can read `main.go` end to end |
-| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) ships alongside it — a recommendation with no debt trajectory attached is an incomplete recommendation. | Same plain CLI | The rubric survives a public read-through without an obvious hole, and no MISSION.md entry ships without a debt-delta line |
-| v0.3 | EXECUTION.md — live AWS cost + effort estimate. Eval suite live in CI. | Same plain CLI | A real cost estimate gets checked against a real completed migration, error margin published |
+| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) ships alongside it — a recommendation with no debt trajectory attached is an incomplete recommendation. `oporder browse` TUI (§6.2) lands here too — the first release with real recommendations to browse is the first release that needs a browsing surface. | Same plain CLI + Bubble Tea/Lip Gloss for the TUI (a display dependency, not an architectural one — doesn't conflict with §4.2) | The rubric survives a public read-through without an obvious hole, no MISSION.md entry ships without a debt-delta line, and every entry shows pros and cons in both the Markdown and the TUI |
+| v0.3 | EXECUTION.md — live AWS cost + effort estimate. Eval suite live in CI. `oporder report --html` (§6.3) ships here, once there's a real cost comparison worth charting. | Same plain CLI | A real cost estimate gets checked against a real completed migration, error margin published; the HTML report renders correctly in light and dark, and the §6.4 hyperscaler-output comparison gets actually done, not just asserted |
 | v0.4 | GCP + Azure providers added. WAF cross-provider normalization live. | Provider clients still direct, one package per provider — decompose into MCP only if a concrete second agent-host integration need shows up (§4.2) | Same workload, three clouds, one honest comparison |
 | v0.5 | Cloudflare added, with the pricing-data maintenance plan from §12 actually running. | | |
 | v1.0 | All four providers, full test/eval coverage, docs site, public case study with a real organization's permission. | MCP/skill/workflow split lands here at the earliest, and only if something real needs it by now | Someone outside Code To Cloud ships a PR that adds a capability we didn't think of |
@@ -582,6 +695,70 @@ tabs:
 > review, not by feature completeness — that review cycle (SOC2 questions, data-flow
 > diagrams, a security.txt, a documented threat model for the MCP servers) isn't a line item
 > anywhere above and should be, likely starting around v0.3–v0.4 once real pilot users exist.
+
+---
+
+## 13. Governance, versioning, and release practice
+
+The point of this whole project is putting the organization, the engineer, the developer —
+not a vendor with a stake in the outcome — in the driving seat, with a genuinely free choice
+about what's right for their own situation. That claim is worthless if the project itself is
+run casually. A tool asking to be trusted with someone's honest architectural second opinion
+has to hold itself to the engineering discipline it implicitly promises the industry it's
+critiquing.
+
+### 13.1 Versioning
+
+- **The CLI follows Semantic Versioning.** A breaking change to any flag, output format, or
+  default behavior is a major version bump, full stop — no "minor version, but technically
+  breaking" exceptions.
+- **Every JSON output schema (`waf-scorecard.json`, `sdlc-maturity.json`, `debt-delta.json`)
+  is versioned independently of the CLI itself**, with a `schemaVersion` field in every file.
+  Downstream tooling — dashboards, CI gates, someone's own script — may parse these directly;
+  breaking that silently by coupling schema changes to CLI releases is exactly the kind of
+  quiet vendor-style behavior this project exists to be the alternative to.
+- **A deprecation is announced at least one minor version before it lands**, with the
+  replacement path stated in the deprecation warning itself, not just the changelog — the
+  same "write actionable errors, not opaque codes" standard the Code To Cloud vault's Agent
+  Design Patterns research already sets for LLM-facing tool output applies here to
+  human-facing CLI output too.
+
+### 13.2 Release practice
+
+- **`CHANGELOG.md`** in Keep a Changelog format, updated in the same PR as the change it
+  describes — never reconstructed from git log after the fact.
+- **Tagged releases with prebuilt binaries** on GitHub Releases for every platform in §4.4,
+  the same distribution shape already proven by Infracost, Steampipe, and driftctl.
+- **Reproducible builds and a generated SBOM per release**, with SLSA provenance as the
+  longer-term bar — this is not new territory for this practice; it's the direct application
+  of the Code To Cloud Agentic Engineering vault's own Supply Chain and Governance research
+  to its own output, rather than advice given to others and skipped for this project.
+
+### 13.3 Decision process for load-bearing changes
+
+Not every PR needs process. A change to the 5/7-Rs rubric (§5.3), the WAF cross-provider
+mapping (§5.4), or the debt-delta model (§5.8) does, because these are the exact surfaces
+where a quiet, well-intentioned tweak could drift the tool toward a biased answer without
+anyone noticing for months:
+
+- Any such change ships as a short written proposal in the PR description — what evidence
+  changes, why, and what real-world case motivated it — not just a diff.
+- It ships with a new or updated eval fixture (§7) that would have caught the old behavior
+  as wrong, per the standard already set in `CONTRIBUTING.md`.
+- It's reviewed by more than one person before merge once the project has more than one
+  active maintainer — a rubric this load-bearing shouldn't have a single point of failure
+  for "is this still honest," any more than the tool itself should let one worker verify its
+  own finding (§5.7).
+
+### 13.4 Community standards
+
+- A `CODE_OF_CONDUCT.md` (Contributor Covenant) from the first public commit, not added
+  retroactively once there's a reason to need one.
+- Issues and PRs get a first response inside a stated window once the project has real usage
+  — an unattended-looking repo is the single fastest way to lose the exact trust this whole
+  project depends on, and this vault's own prior research already named maintainer bandwidth
+  as the top real risk to community projects; a stated response-time commitment is how that
+  risk gets managed rather than just acknowledged.
 
 ---
 
