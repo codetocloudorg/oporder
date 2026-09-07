@@ -71,6 +71,22 @@ convention specifically — there isn't one publicly documented for Go — but t
 the Go community has to a load-bearing consensus, which is the more honest bar to cite than
 naming a company that doesn't actually publish a Go layout standard.
 
+## Recommended tooling
+
+Nothing here is required — the CLI itself has zero required AI-tooling dependency (SPEC.md
+§4.6), and that stays true for contributors too. What's actually recommended, because it's
+what this project uses on itself per SPEC.md §4.7:
+
+- **[Claude Code](https://claude.com/claude-code)** for AI-assisted development — a provider
+  addition (the reference easy-first-PR above) is a textbook fan-out-and-verify task, and
+  dynamic workflows handle that shape well. Any AI coding tool works; this is what the
+  maintainers actually use, stated honestly rather than pretending neutrality about a
+  development tool the way the *product* has to stay neutral about cloud vendors.
+- **`gopls` + `golangci-lint` + `staticcheck`** in your editor of choice — VS Code with the Go
+  extension or GoLand both wire these in with no extra config.
+- **The `gh` CLI** for issues and PRs — faster round-trip than the GitHub web UI for the kind
+  of small, scoped PRs this project is designed to invite.
+
 ## License
 
 By contributing, you agree your contribution is licensed under the Apache License 2.0,

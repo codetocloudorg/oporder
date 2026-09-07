@@ -59,7 +59,14 @@ project, and it's local: in July 2026, Alberta's Ministry of Technology and Inno
 **Claude Agent SDK + Claude Code (Opus and Sonnet)** to scan **466 million lines of code
 across 27 provincial ministries — 1,280 applications, 3,400 repositories — in about 20
 hours**, a task they estimate would otherwise take **6.5 years and roughly $2 billion**.
-Some legacy systems were then rebuilt in **4–5 days** versus an original 5-month estimate.
+
+The concrete example worth citing by name rather than only the aggregate numbers: a
+**subsidy-program portal, hand-coded in Java roughly 25 years ago, that took five months to
+build the first time** — rebuilt in **4–5 days**. That's not a rounding-error improvement,
+and it's specific enough to be a real fixture archetype, not just a headline stat — §7's test
+suite should include a synthetic "quarter-century-old, hand-coded, single-language monolith"
+fixture modeled directly on this shape, since it's a documented, real-world case rather than
+an invented edge case.
 
 Their architecture independently validates several of this spec's design choices, arrived at
 separately:
@@ -274,7 +281,7 @@ cloud it recommends:
   **stated future requirement, not a trigger that's already fired** — §4.2's threshold is
   "something real forces it," and a named intent isn't the same as an actual second host
   someone is actually trying to use OpOrder from today. The roadmap (§10) still gates the
-  MCP/skill/workflow split to v0.4 at the earliest, and this list exists so that whenever the
+  MCP/skill/workflow split to M5 at the earliest, and this list exists so that whenever the
   trigger does fire, it's clear which hosts the design already promised to support — not to
   quietly pull the timeline forward by restating the requirement more confidently.
 - **AGENTS.md compatibility**: any coding agent reading a repo's `AGENTS.md` should be able to
@@ -498,22 +505,22 @@ of implied away:
 | Operations | Operational Excellence | Operational Excellence | Operational Excellence |
 | Sustainability | Sustainability | **No dedicated pillar** — treated as cross-cutting guidance, not a scored pillar | **No dedicated pillar** — same gap |
 
-**The row that actually matters**: Sustainability has real, scoreable AWS guidance and no
-equivalent first-class pillar on Azure or GCP. A canonical rubric that includes it either
-scores Azure/GCP workloads against criteria those providers never asked to be measured on
-(defensible, since the point is a neutral rubric, not each vendor's own scorecard — but has
-to be *stated* as a deliberate choice, not silently glossed over) or drops the row for
-cross-provider comparisons and keeps it AWS-only, which then isn't actually a canonical
-six-pillar rubric at all. **This decision is unmade as of this document** and needs resolving
-before §5.4 ships in v0.4, not discovered mid-implementation.
+**Decided, since all four providers now ship together in v1.0 (§10) and this can't stay open
+into a real release**: OpOrder scores Sustainability against **its own criteria — energy-
+region carbon intensity, idle/underutilized capacity, spot or preemptible use where
+applicable — rather than mapping to any single vendor's pillar definition.** This sidesteps
+the AWS-has-it/Azure-and-GCP-don't asymmetry entirely instead of picking a side of it: the
+other five pillars map cleanly because all three vendors publish an equivalent, so deferring
+to vendor definitions there is the right call; Sustainability doesn't have that equivalence to
+defer to, so OpOrder defines it once, applies it identically to every provider including
+Cloudflare, and states plainly that this one pillar is OpOrder's own rubric, not a vendor's.
 
-**One data point worth having before that decision gets made**: Azure's own *Business Case*
-tool — a separate product from the Well-Architected Framework itself — started including
-carbon-emissions estimates in 2025, despite Azure's WAF having no formal Sustainability
-pillar to hang that number on. That's Microsoft independently reaching the same conclusion
-this section is wrestling with: sustainability is scoreable and worth reporting even without
-a first-class framework pillar behind it. Reasonable precedent for scoring it in the debt/cost
-outputs (§5.6, §5.8) even if §5.4's canonical WAF rubric ultimately drops it as a formal row.
+**The precedent that made this decision easy**: Azure's own *Business Case* tool — a separate
+product from the Well-Architected Framework itself — started including carbon-emissions
+estimates in 2025, despite Azure's WAF having no formal Sustainability pillar to hang that
+number on. Microsoft independently reached the same conclusion this section landed on:
+sustainability is scoreable and worth reporting even without a first-class framework pillar
+behind it.
 
 ### 5.5 SDLC maturity scoring
 
@@ -754,15 +761,15 @@ this example gets replaced with a real captured session the first time one exist
 
 **Two things wrong with the version of this example that shipped in earlier drafts of this
 document, caught on this pass and fixed here:**
-1. It showed a 5/7-Rs breakdown ("12 retain · 34 rehost...") — but per §10's roadmap, v0.1
+1. It showed a 5/7-Rs breakdown ("12 retain · 34 rehost...") — but per §10's roadmap, M1
    only ships SITUATION.md. There's no MISSION.md, no Rs table, and no recommendation to
-   summarize until v0.2. The example below is now explicitly labeled for what it actually
-   illustrates: the fuller v0.3+ experience, once Mission and Execution both exist — not v0.1.
+   summarize until M2. The example below is now explicitly labeled for what it actually
+   illustrates: the fuller M4-complete experience, once every pillar exists — not M1's output.
 2. The timing and cost figures were drawn before §5.7's verification, §5.7a's counter-case
    agent, §5.8's debt-delta, and §5.9's security baseline all became real per-workload phases.
    Each one is a real, additional LLM call layered on top of what this example originally
-   showed — the true cost and runtime of a full v0.3+ scan is very likely to be several times
-   what's shown below, not a rounding difference. Treat every number in this block as
+   showed — the true cost and runtime of a full M4-complete scan is very likely to be several
+   times what's shown below, not a rounding difference. Treat every number in this block as
    **illustrative of the shape of the output, not a forecast of its scale** — the actual
    numbers get corrected the moment a real run exists to measure, the same standard already
    applied to every other unvalidated figure in this document (§12).
@@ -1144,14 +1151,30 @@ species — but it's the honest picture, not an assumption that nobody's thought
 
 ## 10. Roadmap
 
-| Phase | Scope | Architecture | Exit criteria |
+> [!warning] Scope decision, made explicitly, with the trade-off named rather than hidden
+> The original roadmap here shipped AWS-only first specifically to validate §5.0's correlation
+> logic and get external users confirming the diagram before multiplying the surface area
+> across four providers. That sequencing was deliberately overridden: **all four providers
+> ship together in v1.0, including the two decisions this forced to be made now instead of
+> after real usage — §5.4's Sustainability scoring and §12's Cloudflare pricing labeling are
+> both resolved above, not validated.** This is a real, accepted increase in risk to the
+> maintainer-bandwidth concern named repeatedly elsewhere in this document, not a free
+> upgrade — stated here so nobody reading this roadmap later mistakes it for the cautious
+> version.
+
+Internal build order below — these are engineering milestones toward one v1.0 launch, not
+independently shippable releases the way the original phased roadmap was. Each one still gets
+its own exit check, because shipping four providers at once doesn't mean skipping verification
+on each piece, it means doing all the verification before one bigger launch instead of after
+several smaller ones.
+
+| Milestone | Scope | Architecture | Exit criteria |
 |---|---|---|---|
-| v0.1 | AWS only. Live inventory + diagram + plain-English SITUATION.md, **including §5.0's workload correlation** — not deferred to v0.2, because a diagram that hasn't resolved which code maps to which live resource is two unlinked diagrams wearing one filename, not the unified architecture picture this tool promises from the first release. No Mission/Execution yet. | Plain Go CLI, direct AWS SDK calls — no MCP/skill/workflow split (§4.2) | **Measurable, not a vibe**: at least 3 external users (outside Code To Cloud) run it against a real AWS account and confirm the generated diagram matches their own manual understanding of the account, in writing (an issue comment is enough) — and a Go developer with no prior context on the project can read `main.go` end to end in one sitting |
-| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) and the counter-case block for Rearchitect/Repurchase/Retire (§5.7a) ship alongside it — a recommendation with no debt trajectory or counter-case attached is an incomplete recommendation for the calls that matter most. `oporder browse` TUI (§6.2) lands here too — the first release with real recommendations to browse is the first release that needs a browsing surface. | Same plain CLI + Bubble Tea/Lip Gloss for the TUI (a display dependency, not an architectural one — doesn't conflict with §4.2) | **Measurable**: at least one external reviewer with no stake in the project reads §5.3's rubric and files a specific, actionable objection (not silence) — silence isn't evidence the rubric is solid, an actual objection that gets resolved is. No MISSION.md entry ships without a debt-delta line, and every entry shows pros and cons in both the Markdown and the TUI |
-| v0.3 | EXECUTION.md — live AWS cost + effort estimate. Eval suite live in CI. `oporder report --html` (§6.3) ships here, once there's a real cost comparison worth charting. | Same plain CLI | A real cost estimate gets checked against a real completed migration, error margin published; the HTML report renders correctly in light and dark, and the §6.4 hyperscaler-output comparison gets actually done, not just asserted |
-| v0.4 | GCP + Azure providers added. WAF cross-provider normalization live. | Provider clients still direct, one package per provider — decompose into MCP only if a concrete second agent-host integration need shows up (§4.2) | Same workload, three clouds, one honest comparison |
-| v0.5 | Cloudflare added, with the pricing-data maintenance plan from §12 actually running. | | |
-| v1.0 | All four providers, full test/eval coverage, docs site, public case study with a real organization's permission. | MCP/skill/workflow split lands here at the earliest, and only if something real needs it by now | Someone outside Code To Cloud ships a PR that adds a capability we didn't think of |
+| M1 — Foundation | §5.0 correlation, §5.1–§5.2 code and live-infra analysis, SITUATION.md diagram/inventory — **across AWS, GCP, Azure, and Cloudflare simultaneously**, including Cloudflare's honestly-labeled directional pricing (§12) from the start, not bolted on later. | Plain Go CLI, direct SDK calls per provider — no MCP/skill/workflow split (§4.2); "add a provider" stays the reference contribution path even though all four already exist, since a fifth (or a regional/sovereign-cloud variant) should still be a scoped PR |  A diagram generated against a real account in *each* of the four providers gets confirmed against manual understanding by at least one external-to-Code-To-Cloud reviewer per provider — four confirmations, not one, since "all clouds from day one" means the correlation logic actually has to work on all four, not just claim to |
+| M2 — The call | §5.3's 7-Rs rubric (with the tie-break from the earlier pass), §5.8 debt-delta, §5.7a counter-case for Rearchitect/Repurchase/Retire — applied uniformly across all four providers since M1 already built the provider layer underneath it. | Same plain CLI | At least one external, no-stake reviewer files a specific, actionable objection to §5.3's rubric on **each** provider's fixture set — an objection on AWS's fixtures doesn't clear GCP's |
+| M3 — The number | EXECUTION.md: cost/effort estimate, wave planning, side-by-side scenario comparison (§3.3) — this is the milestone where shipping all four providers together actually pays for itself, since a true cross-cloud cost comparison needs all four live at once to mean anything. | Same plain CLI | A real cost estimate checked against a real completed migration on at least one provider, error margin published; the cross-provider comparison table is legible enough that a decision-maker doesn't need this spec open to read it |
+| M4 — The bar | §5.4 WAF scoring (Sustainability resolved above), §5.9 security baseline, §5.5 SDLC scoring, `oporder browse` TUI (§6.2), `--html` report (§6.3). | Same plain CLI + Bubble Tea/Lip Gloss (display dependency, not architectural — §4.2 unaffected) | The §6.4 hyperscaler-output comparison gets actually done, not asserted; every recommendation shows pros/cons in both Markdown and TUI, on all four providers |
+| M5 — Launch | Full eval/test coverage per §7 including the CI pipeline and the scale fixture, `docs/rubric.md` and `docs/architecture/` published, the launch plan in §16 executed. | MCP/skill/workflow split lands here at the earliest, only if a concrete second agent-host need exists by now (§4.2/§4.3) | Public v1.0 release with a real organization's case study, permission obtained; someone outside Code To Cloud ships a PR that adds a capability nobody on the project thought of |
 
 ---
 
@@ -1186,10 +1209,15 @@ species — but it's the honest picture, not an assumption that nobody's thought
 
 > [!danger] "This spec assumes maintainer bandwidth this project doesn't have yet."
 > The single biggest risk to the whole plan, flagged earlier in this project's own history
-> and still true here: a roadmap this thorough is worthless without sustained review/triage
-> capacity. **The roadmap in §10 should be read as sequential and gated, not parallel** —
-> v0.2 doesn't start until v0.1 actually has real users, specifically so scope never outruns
-> the hours available to ship it.
+> and still true here — and it just got materially bigger. This mitigation originally read
+> "the roadmap should be sequential and gated, external users validate one phase before the
+> next starts, so scope never outruns available hours." **That protection was explicitly
+> traded away** when the decision was made to ship all four providers together in v1.0 (§10)
+> rather than validate on AWS first. The milestones (M1–M5) are still sequential for
+> engineering-order reasons, but the external-validation gate between them is gone by design.
+> This is a deliberately accepted increase in risk, stated here so it isn't mistaken for an
+> oversight — the honest mitigation left standing is M1's per-provider external confirmation
+> requirement, which is real but weaker than "don't build M2 until M1 has actual users."
 
 > [!danger] "This document diagnosed its own scope creep and then kept doing it anyway."
 > This is the most important finding of this pass, and it's about the spec's own behavior,
@@ -1202,8 +1230,11 @@ species — but it's the honest picture, not an assumption that nobody's thought
 > been produced at, versus the pace code gets written at. **The fix, applied now, not just
 > acknowledged**: everything in §13 beyond SemVer and a changelog is cut back to "once there's
 > a second maintainer" (see the revised §13 below). The OWASP baseline (§5.9) and WCAG bar
-> (§6.4) stay as *destinations*, not v0.1–v0.3 requirements — nothing in the roadmap's early
-> phases blocks on either. If this document adds a new capability in a future session without
+> (§6.4) were originally destinations for later phases, not early requirements — that changed
+> when the roadmap collapsed to one v1.0 launch (§10): both now land in M4, before launch,
+> because there's no longer an "early phase" for them to wait behind. Worth naming as one more
+> concrete consequence of the scope decision, not a contradiction of this finding. If this
+> document adds a new capability in a future session without
 > also naming what it's displacing or deferring in the same breath, that's the signal the
 > pattern repeated and needs stopping again.
 
@@ -1218,18 +1249,20 @@ species — but it's the honest picture, not an assumption that nobody's thought
 > predicted vs. actual debt trajectory (via a follow-up scan some months post-migration) from
 > the first pilot user onward, not as a someday nice-to-have.
 
-> [!warning] Cloudflare has no public pricing API.
-> Every other provider in §4.5 has a live, queryable pricing source. Cloudflare doesn't.
-> Options: maintain a manually-updated pricing table with a visible "last verified" date
-> (honest but stale-prone), scrape the public pricing page (fragile, breaks silently), or
-> scope Cloudflare cost estimates as "directional, verify before committing" in the report
-> itself until a better source exists. No option here is fully satisfying — pick one
-> explicitly rather than let it default silently.
+> [!success] Decided — Cloudflare has no public pricing API, and this can't stay unresolved into v1.0
+> Every other provider in §4.5 has a live, queryable pricing source. Cloudflare doesn't, and
+> of the three options previously listed here, OpOrder ships the honest one: **every
+> Cloudflare cost figure is labeled "directional, verify before committing" directly in the
+> output** — never silently upgraded to look as live-priced as the other three, and never
+> a maintained manual table pretending to be current when it isn't. A stale-but-confident
+> number is worse than an honestly-uncertain one; this is the same standard §5.6's currency
+> handling and every unvalidated coefficient in §12 is already held to, applied here too.
 
 > [!warning] "Cloudflare Containers" GA status needs verification at build time, not spec time.
 > The research behind §4.5 confirmed Workers, D1, R2, and Durable Objects clearly; container
-> support on Cloudflare specifically should be re-verified against current docs when v0.5
-> actually starts, not assumed from this document.
+> support on Cloudflare specifically should be re-verified against current docs when M1
+> actually starts building the Cloudflare connector — now the first milestone, not a
+> deferred later phase — not assumed from this document.
 
 > [!warning] Usage telemetry for "retire" candidates isn't equally available everywhere.
 > AWS, Azure, and GCP expose utilization metrics with varying depth and default retention;
@@ -1247,7 +1280,7 @@ species — but it's the honest picture, not an assumption that nobody's thought
 > §5.3 scores per workload, but real infrastructure has shared databases, shared queues, and
 > platform services used by dozens of applications at once. The rubric as specified doesn't
 > yet say what happens when two workloads that share a dependency get different Rs — this
-> needs its own resolved design before v0.3, not an assumption that it'll sort itself out.
+> needs its own resolved design before M3, not an assumption that it'll sort itself out.
 
 > [!warning] Native Windows (non-WSL2) is explicitly out of scope, and that's a real exclusion.
 > Reasonable for a first release given the target audience, but worth stating as a conscious
@@ -1257,7 +1290,7 @@ species — but it's the honest picture, not an assumption that nobody's thought
 > §10's roadmap is all engineering milestones. The earlier research in this project
 > established that enterprise adoption of a tool like this is gated by security/compliance
 > review, not by feature completeness — that review cycle (SOC2 questions, data-flow
-> diagrams) isn't a line item anywhere above and should be, likely starting around v0.3–v0.4
+> diagrams) isn't a line item anywhere above and should be, likely starting around M3–M4
 > once real pilot users exist. [SECURITY.md](SECURITY.md) now covers the disclosure process
 > and the threat model (credential handling, the prompt-injection risk inherent to reading
 > untrusted repos and cloud metadata, MCP scope-minimization) — that part of this gap is
@@ -1290,7 +1323,7 @@ Everything below was in the original draft of this section as a day-one requirem
 it is wrong to eventually have — all of it is wrong to build before the thing it protects
 exists:
 
-| Deferred item | Real trigger to build it | Why it doesn't belong in v0.1–v0.3 |
+| Deferred item | Real trigger to build it | Why it doesn't belong before launch |
 |---|---|---|
 | Independently versioned JSON schemas (`schemaVersion` fields) | The first external tool or dashboard actually parses OpOrder's output directly | Versioning a schema nobody consumes yet is protecting against a break that can't happen |
 | Reproducible builds, SBOM, SLSA provenance per release | The first tagged binary release users actually download and run | There's nothing to attest to the provenance of yet |
@@ -1352,6 +1385,56 @@ table itself — it's evidence a decision-maker didn't have and couldn't easily 
 5/7-Rs call is the part every hyperscaler tool already does passably. The parts these journeys
 surfaced as load-bearing — §5.0's correlation and §3.2's preference lens — are exactly the two
 gaps this pass exists to have found and fixed, not incidental features.
+
+---
+
+## 15. Continuous improvement — the loop, not a one-time launch
+
+Everything below already exists somewhere in this document, scattered across sections written
+for other reasons. Stated together once, as an actual mechanism, because "always improving"
+has to mean something more specific than an intention:
+
+- **Every confirmed wrong recommendation becomes a permanent eval fixture** (CONTRIBUTING.md,
+  §11) — the tool's accuracy is a monotonically growing test suite, not a static snapshot from
+  launch day.
+- **Coefficients get corrected against reality, not re-guessed** — the effort estimate (§5.6)
+  and debt-delta model (§5.8) are explicitly stated hypotheses, audited against real completed
+  engagements as they happen, per the gap analysis (§12).
+- **The eval suite reruns on every model or prompt change** (§7), scored against the same
+  fixed, human-authored answers every time — improvement in the underlying model shows up as a
+  measured score change, not an assumption that a newer model is automatically better.
+- **One new mechanism this section actually adds**: a completed engagement can be re-scanned
+  months later, and the original recommendation's predicted outcome (debt trajectory, cost,
+  effort) gets compared against what actually happened. This is the same idea already applied
+  informally to individual coefficients, made into a real, repeatable practice — "did this
+  recommendation age well" becomes a question the tool can answer about itself, not just a
+  hope stated in the gap analysis.
+- **What "improving" explicitly doesn't mean**: shipping more features. Everything above is
+  about the existing rubric getting *more accurate*, not *larger* — matching §11's own
+  finding that this project's scope grew when its accuracy should have been the thing
+  compounding instead.
+
+## 16. Launch
+
+The plan already discussed earlier in this project's history, written down rather than left
+as a conversation:
+
+- **Ship the milestones in §10's actual order.** M5 is the launch milestone, not an arbitrary
+  finish line — nothing gets announced before the eval suite, the docs, and a real case study
+  exist to back it up.
+- **Launch with a talk or a written piece, not a silent release.** A working tool with no
+  audience is a GitHub repo nobody finds; the story here — vendor-neutral, evidenced,
+  self-hosted, built to be the honest second opinion the hyperscalers structurally can't be —
+  is a real talk on its own, independent of whether the code is finished the day it's given.
+- **The Alberta case study (§2.0) is the opening line of that talk**, not a footnote — it's
+  the single strongest piece of external validation this whole category has, and it's
+  currently buried in a spec document nobody outside this project reads.
+- **Show HN / a written launch post, timed to ship the same day as the talk**, not weeks
+  apart — a launch spread across multiple half-attempts loses more momentum than one
+  coordinated push.
+- **The honest metric for a good launch isn't stars.** It's calls booked with Code To Cloud
+  and PRs from people who aren't Code To Cloud — the two things this project was actually
+  built to produce, per its own stated purpose in §0.
 
 ---
 
