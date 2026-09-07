@@ -56,6 +56,15 @@ discovered it — cross that boundary, and only when the user has configured an 
 all. Self-hosted is the default; there is no telemetry, and no report or finding is sent
 anywhere OpOrder wasn't explicitly told to send it.
 
+**The same standard applies to the LLM provider key itself** (§4.6 of SPEC.md), which wasn't
+previously addressed here even though it's a credential like any other: `oporder auth`
+writes the key to `~/.config/oporder/auth.json` created with `0600` permissions (owner
+read/write only, never group- or world-readable), the key is never printed in full in any log
+or error message (truncated to a fingerprint if it needs to appear at all), and a crash or
+panic never dumps process environment or config contents into a stack trace. A leaked LLM key
+is a smaller blast radius than a leaked cloud credential, but it's still real money and real
+access, and gets the same discipline, not a lesser one because it's newer.
+
 ### 2. Prompt injection is the real, open threat for this category of tool — not a hypothetical
 
 OpOrder reads two kinds of content it does not control: arbitrary source code in the

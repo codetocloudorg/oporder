@@ -43,6 +43,7 @@ differentiator, and neither is one you can quietly abandon under commercial pres
 | **Vendor-neutrality applies to the tooling ecosystem too, not just the cloud.** The plain CLI has to work with zero AI agent host installed. | No feature that only works inside one vendor's agent product (Claude Code, Cursor, etc.) is allowed to become load-bearing. See §4.3. |
 | **Every recommendation shows pros and cons, never a bare verdict — and every surface looks considered, not default-tool ugly.** | No CLI output, TUI view, or report ships that only shows the "why we're right" side of a call, or that reads like an afternoon's unstyled output. See §6. |
 | **A stated platform preference adds a lens, it never replaces the analysis.** Helping someone who's already decided is legitimate; quietly bending the evidence to flatter that decision isn't. | No `--prefer` flag is allowed to suppress or soften the neutral recommendation sitting right next to it. See §3.2. |
+| **Any tool this project depends on or integrates with is open-source or free.** The barrier to actually running OpOrder has to stay low — a dependency behind a paywall contradicts the "low barrier, self-hosted, judge it yourself" pitch as directly as a bundled AI vendor key would. | No integration ships that requires a paid license, a subscription, or an account with a company that could revoke access. Go, Bubble Tea/Lip Gloss, the provider SDKs, and the draw.io MCP server (§6.3) all already clear this bar — it's a check applied to every future addition too, not a one-time audit. |
 
 ---
 
@@ -194,20 +195,29 @@ things, and only one of them was previously addressed.
 
 ## 4. System architecture
 
+> [!warning] This diagram was drawn before §5.0 existed, and was never updated to match. Fixed
+> here — the original showed a single flat fan-out straight into per-workload verification,
+> which is no longer true: correlation (§5.0) has to resolve for the *whole* codebase and
+> account before any workload-level work can be fanned out at all, since a workload isn't a
+> unit of work yet until its boundary and its cloud resources are both known.
+
 ```mermaid
 flowchart TB
     U["Developer / Operator"] -->|"oporder scan ."| CLI["OpOrder CLI (Go binary)"]
-    CLI --> SKILL["Assessment Skill\n(the methodology: rubrics, scoring, report shape)"]
-    CLI --> WF["Dynamic Workflow\n(fan out → reduce → verify → synthesize)"]
-    WF --> MCP1["MCP: Cloud Inventory\n(read-only)"]
+    CLI --> RAW1["Code analysis (5.1)"]
+    CLI --> RAW2["Live infra scan via MCP (5.2)"]
+    RAW1 --> CORR["Workload identification\n& correlation (5.0)\n— runs once, whole codebase,\nbefore any fan-out"]
+    RAW2 --> CORR
+    CORR --> WF["Dynamic Workflow\nfan out ONE PER RESOLVED WORKLOAD\n→ reduce → verify → synthesize"]
     WF --> MCP2["MCP: Pricing\n(live, per-provider)"]
     WF --> MCP3["MCP: WAF / Posture Checks"]
-    MCP1 --> AWS[("AWS")]
-    MCP1 --> GCP[("GCP")]
-    MCP1 --> AZ[("Azure")]
-    MCP1 --> CF[("Cloudflare")]
-    WF --> VER["Fresh-context Verifiers\n(one per finding, never the worker's chat)"]
-    VER --> REP["OpOrder Report\nSituation / Mission / Execution"]
+    MCP2 --> AWS[("AWS")]
+    MCP2 --> GCP[("GCP")]
+    MCP2 --> AZ[("Azure")]
+    MCP2 --> CF[("Cloudflare")]
+    WF --> VER["Fresh-context Verifiers (5.7)\none per finding, never the worker's chat"]
+    VER --> ADV["Counter-case agent (5.7a)\nRearchitect / Repurchase / Retire only, by default"]
+    ADV --> REP["OpOrder Report\nSituation / Mission / Execution"]
 ```
 
 ### 4.1 Why this shape, not a monolith
@@ -560,6 +570,22 @@ matching the pattern already validated in this vault's Graph Engineering work: i
 correct, is it current, is the source real. A finding that fails majority verification is
 dropped, not softened.
 
+**Partial failure — named as a gap earlier in this project's own history and never actually
+closed until now.** A 142-workload scan making this many API and LLM calls per workload
+*will* hit a rate limit, a timeout, or a dropped connection on some real runs — not an edge
+case, an expectation. The fix is the same fan-in guard already validated in this vault's
+Graph Engineering research: every stage that fans out counts its results against what it
+expected, and a shortfall gets **flagged in the report, never silently absorbed**:
+```
+Assessed: 138 of 142 workloads.
+WARNING: 4 workloads returned no result (AWS rate limit at ~11m mark) — see
+SITUATION.md#incomplete-scan for which ones and how to re-run just those.
+```
+**No report is ever presented as complete when it isn't.** A partial scan that looks
+identical to a full one is a worse failure than a scan that visibly stopped — the first
+misleads a decision-maker into thinking the picture is whole; the second at least tells them
+what they don't know yet.
+
 ### 5.7a Devil's advocate as a standing feature, not a spec-writing exercise
 
 Verification (§5.7) answers *is this finding true*. It doesn't answer a different, harder
@@ -583,6 +609,16 @@ recommendation — *"OpOrder recommends Refactor. The strongest case against it:
 reasoning, citing evidence already gathered]. If this changes your view, check [specific
 thing] before committing."* This is what "the anchor a human can push back against" (§3.2)
 actually becomes when it's a real adversarial pass instead of a passive caveat line.
+
+**A real limit, not previously stated for this specific mechanism**: fresh context protects
+the counter-case agent from the *original worker's reasoning bias* — it never sees why the
+first agent reached its conclusion. It does **not** protect against the evidence itself being
+adversarially poisoned (SECURITY.md's prompt-injection threat model), because both agents read
+the same underlying evidence. A resource tag or code comment crafted to manipulate the
+assessment reaches the counter-case agent exactly as it reaches the worker. §5.7a is a real
+check against confirmation bias in reasoning; it is not, and shouldn't be presented as, a
+second line of defense against adversarial input — that gap stays exactly where
+SECURITY.md already names it, open and tracked, not smaller because a second agent exists.
 
 **The honest cost tradeoff, stated rather than hidden**: this is a second full agent pass on
 top of §5.7's verifiers — for a 142-workload scan, that's a real, visible addition to the
@@ -692,7 +728,22 @@ looks like an afternoon's `fmt.Println` work.
 
 A developer opens this tool for a five-minute look and it's still the thing they reach for a
 year later. Concretely (illustrative — no run has actually produced these numbers yet, and
-this example gets replaced with a real captured session the first time one exists):
+this example gets replaced with a real captured session the first time one exists).
+
+**Two things wrong with the version of this example that shipped in earlier drafts of this
+document, caught on this pass and fixed here:**
+1. It showed a 5/7-Rs breakdown ("12 retain · 34 rehost...") — but per §10's roadmap, v0.1
+   only ships SITUATION.md. There's no MISSION.md, no Rs table, and no recommendation to
+   summarize until v0.2. The example below is now explicitly labeled for what it actually
+   illustrates: the fuller v0.3+ experience, once Mission and Execution both exist — not v0.1.
+2. The timing and cost figures were drawn before §5.7's verification, §5.7a's counter-case
+   agent, §5.8's debt-delta, and §5.9's security baseline all became real per-workload phases.
+   Each one is a real, additional LLM call layered on top of what this example originally
+   showed — the true cost and runtime of a full v0.3+ scan is very likely to be several times
+   what's shown below, not a rounding difference. Treat every number in this block as
+   **illustrative of the shape of the output, not a forecast of its scale** — the actual
+   numbers get corrected the moment a real run exists to measure, the same standard already
+   applied to every other unvalidated figure in this document (§12).
 
 ```
 $ oporder scan .
@@ -783,6 +834,16 @@ color communicates meaning (an R with rising debt risk reads differently than on
 clean), never decoration, and the report is fully legible in both light and dark terminals
 and browsers — a tool this proud of showing its own reasoning doesn't get to be unreadable
 in half the environments it's opened in.
+
+**The architecture diagram exports to draw.io format, not just static SVG.** `oporder report
+--drawio` (or piping through the [official draw.io MCP
+server](https://github.com/jgraph/drawio-mcp), open source and maintained by the draw.io team
+itself, which already accepts Mermaid.js input directly) hands the diagram over as editable
+`.drawio` XML rather than a flat image. A static SVG is fine to look at once; an architecture
+diagram someone actually wants to annotate, present, or hand to a colleague needs to open in a
+tool people already have installed and know how to use, for free — which is exactly what
+draw.io is, and exactly why it clears the free/open-source bar this project now states as a
+principle (§1) for anything it integrates with.
 
 ### 6.4 Accessibility — README, reports, and the website all meet a real standard, not a good-faith guess
 
@@ -907,7 +968,7 @@ tabs:
 
 | Phase | Scope | Architecture | Exit criteria |
 |---|---|---|---|
-| v0.1 | AWS only. Live inventory + diagram + plain-English SITUATION.md. No Mission/Execution yet. | Plain Go CLI, direct AWS SDK calls — no MCP/skill/workflow split (§4.2) | **Measurable, not a vibe**: at least 3 external users (outside Code To Cloud) run it against a real AWS account and confirm the generated diagram matches their own manual understanding of the account, in writing (an issue comment is enough) — and a Go developer with no prior context on the project can read `main.go` end to end in one sitting |
+| v0.1 | AWS only. Live inventory + diagram + plain-English SITUATION.md, **including §5.0's workload correlation** — not deferred to v0.2, because a diagram that hasn't resolved which code maps to which live resource is two unlinked diagrams wearing one filename, not the unified architecture picture this tool promises from the first release. No Mission/Execution yet. | Plain Go CLI, direct AWS SDK calls — no MCP/skill/workflow split (§4.2) | **Measurable, not a vibe**: at least 3 external users (outside Code To Cloud) run it against a real AWS account and confirm the generated diagram matches their own manual understanding of the account, in writing (an issue comment is enough) — and a Go developer with no prior context on the project can read `main.go` end to end in one sitting |
 | v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) and the counter-case block for Rearchitect/Repurchase/Retire (§5.7a) ship alongside it — a recommendation with no debt trajectory or counter-case attached is an incomplete recommendation for the calls that matter most. `oporder browse` TUI (§6.2) lands here too — the first release with real recommendations to browse is the first release that needs a browsing surface. | Same plain CLI + Bubble Tea/Lip Gloss for the TUI (a display dependency, not an architectural one — doesn't conflict with §4.2) | **Measurable**: at least one external reviewer with no stake in the project reads §5.3's rubric and files a specific, actionable objection (not silence) — silence isn't evidence the rubric is solid, an actual objection that gets resolved is. No MISSION.md entry ships without a debt-delta line, and every entry shows pros and cons in both the Markdown and the TUI |
 | v0.3 | EXECUTION.md — live AWS cost + effort estimate. Eval suite live in CI. `oporder report --html` (§6.3) ships here, once there's a real cost comparison worth charting. | Same plain CLI | A real cost estimate gets checked against a real completed migration, error margin published; the HTML report renders correctly in light and dark, and the §6.4 hyperscaler-output comparison gets actually done, not just asserted |
 | v0.4 | GCP + Azure providers added. WAF cross-provider normalization live. | Provider clients still direct, one package per provider — decompose into MCP only if a concrete second agent-host integration need shows up (§4.2) | Same workload, three clouds, one honest comparison |
