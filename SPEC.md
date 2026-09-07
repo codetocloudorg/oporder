@@ -109,7 +109,7 @@ vendor-neutral tool. That's the whole product.
 ```
 oporder-report/
 ├── SITUATION.md       # the as-is: diagram, inventory, dependency map, tech debt signals
-├── MISSION.md         # per-workload 5/7-Rs recommendation, with the rubric and evidence shown
+├── MISSION.md         # per-workload 5/7-Rs recommendation, with the rubric, evidence, and counter-case shown (§5.7a)
 ├── EXECUTION.md        # cost estimate, effort estimate, sequencing, target service mapping
 ├── waf-scorecard.json  # cross-provider Well-Architected pillar scores, machine-readable
 ├── sdlc-maturity.json  # branching/CI/test/release maturity signals feeding the effort estimate
@@ -317,6 +317,29 @@ user choosing (and paying for) their own model. OpOrder adopts the same pattern:
   whatever the user's configured provider bills, that's the number shown, in the currency and
   at the rate that provider actually charges — no OpOrder markup, ever.
 
+### 4.7 Built using the practices it teaches
+
+This is a consolidation, not new scope — the architecture already commits to this throughout
+the document; what was missing was saying it once, plainly, instead of leaving it scattered
+across a dozen individual citations. **OpOrder's own development is a live instance of the
+Code To Cloud Agentic Engineering vault's canon, not just a project that occasionally cites
+it**: the workflow architecture *is* the diamond pattern (`20-Graph-Engineering.md`) — fan
+out, reduce, verify, synthesize. The verification discipline in §5.7 and the counter-case
+agent in §5.7a *are* the fresh-context, never-grade-your-own-homework rule from
+`08-Harness-and-Loops.md` and `09-Agent-Design-Patterns.md`, applied to a real product instead
+of described in the abstract. Alberta's red-team/blue-team split (§2.0) independently arrived
+at the same discipline at government scale.
+
+**What this adds concretely, beyond restating existing citations**: the actual build process
+— PRs, refactors, the eventual GCP/Azure provider additions — gets run through Claude Code's
+own dynamic workflows where the shape fits (a provider addition is a textbook fan-out-and-
+verify task), and the workflow scripts that produce real, merged changes get saved into
+`.claude/workflows/` in this repo rather than discarded after one run. That makes the
+project's own development process inspectable in exactly the way §1 already requires the
+scoring logic to be — not "trust that we build this well," but the actual scripts, readable,
+in the repo. This is also the honest answer to "is this a good demonstration of agentic
+engineering practice": the demonstration is the commit history, not a claim made about it.
+
 ---
 
 ## 5. The assessment engine
@@ -506,6 +529,39 @@ Every finding is checked by a **fresh-context verifier agent** before it reaches
 matching the pattern already validated in this vault's Graph Engineering work: is it
 correct, is it current, is the source real. A finding that fails majority verification is
 dropped, not softened.
+
+### 5.7a Devil's advocate as a standing feature, not a spec-writing exercise
+
+Verification (§5.7) answers *is this finding true*. It doesn't answer a different, harder
+question: *even granting every finding is true, is this actually the strongest call, or does
+a skeptic have a real case for a different one?* This document has been through repeated
+devil's-advocate passes during its own writing — the fixed tie-break in §5.3, the WAF mapping
+gap in §5.4, and the whole of §11 all exist because of exactly this discipline applied to the
+spec itself. The natural conclusion, and the one this request is actually asking for: **that
+discipline shouldn't live only in how this document got written. It belongs in what the tool
+does on every single run.**
+
+**The mechanism**: once a workload's recommendation clears §5.7's verification, a separate
+**counter-case agent**, fresh context, sees only the raw evidence — never the reasoning that
+produced the recommendation, same isolation rule as every other verifier in this spec — and
+is given one job: construct the strongest available argument for a *different* R than the one
+chosen. Not a devil's-advocate-flavored restatement of the same call; a genuine adversarial
+attempt to beat it.
+
+**Output**: every MISSION.md entry ships a `🔴 Strongest counter-case` block alongside the
+recommendation — *"OpOrder recommends Refactor. The strongest case against it: [specific
+reasoning, citing evidence already gathered]. If this changes your view, check [specific
+thing] before committing."* This is what "the anchor a human can push back against" (§3.2)
+actually becomes when it's a real adversarial pass instead of a passive caveat line.
+
+**The honest cost tradeoff, stated rather than hidden**: this is a second full agent pass on
+top of §5.7's verifiers — for a 142-workload scan, that's a real, visible addition to the
+token cost §3.3 already requires OpOrder to disclose about itself. Running it on all 142
+workloads by default would be expensive and mostly redundant on the easy, high-confidence
+calls. **Default behavior**: automatic on Rearchitect, Repurchase, and Retire — the three Rs
+with the highest cost of being wrong — and available via `oporder scan --devils-advocate=all`
+for anyone who wants it everywhere. Cost-aware by default, available in full when it matters
+enough to pay for.
 
 ### 5.8 Technical debt delta — mitigated or introduced
 
@@ -819,7 +875,7 @@ tabs:
 | Phase | Scope | Architecture | Exit criteria |
 |---|---|---|---|
 | v0.1 | AWS only. Live inventory + diagram + plain-English SITUATION.md. No Mission/Execution yet. | Plain Go CLI, direct AWS SDK calls — no MCP/skill/workflow split (§4.2) | **Measurable, not a vibe**: at least 3 external users (outside Code To Cloud) run it against a real AWS account and confirm the generated diagram matches their own manual understanding of the account, in writing (an issue comment is enough) — and a Go developer with no prior context on the project can read `main.go` end to end in one sitting |
-| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) ships alongside it — a recommendation with no debt trajectory attached is an incomplete recommendation. `oporder browse` TUI (§6.2) lands here too — the first release with real recommendations to browse is the first release that needs a browsing surface. | Same plain CLI + Bubble Tea/Lip Gloss for the TUI (a display dependency, not an architectural one — doesn't conflict with §4.2) | **Measurable**: at least one external reviewer with no stake in the project reads §5.3's rubric and files a specific, actionable objection (not silence) — silence isn't evidence the rubric is solid, an actual objection that gets resolved is. No MISSION.md entry ships without a debt-delta line, and every entry shows pros and cons in both the Markdown and the TUI |
+| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) and the counter-case block for Rearchitect/Repurchase/Retire (§5.7a) ship alongside it — a recommendation with no debt trajectory or counter-case attached is an incomplete recommendation for the calls that matter most. `oporder browse` TUI (§6.2) lands here too — the first release with real recommendations to browse is the first release that needs a browsing surface. | Same plain CLI + Bubble Tea/Lip Gloss for the TUI (a display dependency, not an architectural one — doesn't conflict with §4.2) | **Measurable**: at least one external reviewer with no stake in the project reads §5.3's rubric and files a specific, actionable objection (not silence) — silence isn't evidence the rubric is solid, an actual objection that gets resolved is. No MISSION.md entry ships without a debt-delta line, and every entry shows pros and cons in both the Markdown and the TUI |
 | v0.3 | EXECUTION.md — live AWS cost + effort estimate. Eval suite live in CI. `oporder report --html` (§6.3) ships here, once there's a real cost comparison worth charting. | Same plain CLI | A real cost estimate gets checked against a real completed migration, error margin published; the HTML report renders correctly in light and dark, and the §6.4 hyperscaler-output comparison gets actually done, not just asserted |
 | v0.4 | GCP + Azure providers added. WAF cross-provider normalization live. | Provider clients still direct, one package per provider — decompose into MCP only if a concrete second agent-host integration need shows up (§4.2) | Same workload, three clouds, one honest comparison |
 | v0.5 | Cloudflare added, with the pricing-data maintenance plan from §12 actually running. | | |
