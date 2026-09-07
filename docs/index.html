@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpOrder — vendor-neutral cloud &amp; code assessment</title>
+<meta name="description" content="OpOrder reads your code and your live infrastructure, tells you honestly what's actually there, and hands you a plan — without an opinion about which cloud you should end up on. Open source, self-hosted, vendor-neutral.">
+<link rel="canonical" href="https://oporder.dev/">
+<meta name="robots" content="index, follow">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://oporder.dev/">
+<meta property="og:title" content="OpOrder — vendor-neutral cloud & code assessment">
+<meta property="og:description" content="Reads your code and your live infrastructure, tells you honestly what's actually there, and hands you a plan — without an opinion about which cloud you should end up on.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OpOrder — vendor-neutral cloud & code assessment">
+<meta name="twitter:description" content="Reads your code and your live infrastructure, tells you honestly what's actually there, and hands you a plan — without an opinion about which cloud you should end up on.">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22%230d0f12%22/><text x=%2250%22 y=%2268%22 font-size=%2264%22 text-anchor=%22middle%22 fill=%22%23e8a33d%22 font-family=%22monospace%22>&gt;_</text></svg>">
+
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0d0f12;
+    --bg-raised: #16191d;
+    --border: #2a2e34;
+    --text: #e8e8e6;
+    --text-dim: #9a9fa6;
+    --accent: #e8a33d;
+    --accent-dim: #8a6528;
+    --good: #6fbf73;
+    --bad: #d97757;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-dim); }
+  a:hover { border-bottom-color: var(--accent); }
+  main { max-width: 720px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+  section { margin-bottom: 4rem; }
+  .kicker {
+    color: var(--accent);
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 0.75rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    margin: 0 0 0.5rem;
+    line-height: 1.15;
+  }
+  h2 {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 1.25rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+  .tagline { font-size: 1.15rem; color: var(--text-dim); margin: 0 0 2rem; max-width: 46ch; }
+  .install {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+  .install .prompt { color: var(--accent); }
+  .quotes { list-style: none; margin: 0; padding: 0; }
+  .quotes li {
+    padding: 0.9rem 1rem;
+    background: var(--bg-raised);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    margin-bottom: 0.6rem;
+    font-style: italic;
+    color: var(--text);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 0.7rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--accent); font-weight: normal; width: 9rem; }
+  td { color: var(--text-dim); }
+  .status-box {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-raised);
+  }
+  .status-box .dot { color: var(--accent); }
+  .links { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 0.5rem; }
+  footer {
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    justify-content: space-between;
+  }
+  .no-vendor {
+    color: var(--bad);
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <section>
+    <p class="kicker">Situation / Mission / Execution</p>
+    <h1>OpOrder</h1>
+    <p class="tagline">Vendor-neutral assessment for cloud migration and application
+    modernization. Reads your code and your live infrastructure, tells you honestly what's
+    actually there, and hands you a plan — without an opinion about which cloud you should
+    end up on.</p>
+    <div class="install">
+      <span class="prompt">$</span>
+      <span>binary not released yet — <a href="https://github.com/codetocloudorg/oporder">follow progress on GitHub</a></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why</h2>
+    <p>Every existing agentic migration tool is built by a cloud provider with a stake in the
+    answer. AWS Transform recommends AWS. Azure's tooling recommends Azure. That's not a flaw
+    in those tools — it's their business model. OpOrder has no cloud to sell, so it can say
+    things they structurally can't:</p>
+    <ul class="quotes">
+      <li>"Retain this. Migrating it isn't worth it."</li>
+      <li>"Repatriate this to on-prem — it's cheaper there."</li>
+      <li>"Retire this. Nobody uses it."</li>
+    </ul>
+    <p>A recommendation that costs the tool nothing to make is more trustworthy. That's the
+    whole premise — and it applies just as much when nothing is moving providers at all.
+    Modernizing a legacy monolith in place is exactly as much OpOrder's job as a cross-cloud
+    migration is.</p>
+  </section>
+
+  <section>
+    <h2>What it produces</h2>
+    <table>
+      <tr><th>Situation</th><td>The honest as-is: architecture diagram, dependency map, documentation — generated from your actual code and live infrastructure, not from what the wiki claims.</td></tr>
+      <tr><th>Mission</th><td>The recommendation: rehost, replatform, refactor, rearchitect, repurchase, retire, or retain — per workload, with the reasoning and a counter-case shown.</td></tr>
+      <tr><th>Execution</th><td>Cost estimate, effort estimate, and sequencing — everything needed to hand to a build team, yours or anyone else's.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>What it deliberately doesn't do</h2>
+    <p>OpOrder assesses and recommends. It does not execute. <span class="no-vendor">The
+    moment the tool that makes the recommendation also profits from carrying it out, the
+    recommendation stops being trustworthy</span> — so OpOrder stops at the plan. If you want
+    the work actually done, that's a separate, explicitly-scoped engagement with whoever you
+    choose, <a href="https://codetocloud.io">Code To Cloud</a> included.</p>
+  </section>
+
+  <section>
+    <div class="status-box">
+      <p><span class="dot">●</span> <strong>Early. Building in public.</strong> No released
+      binary yet — the repository currently holds the full specification, not the tool.</p>
+      <p>Follow along, open an issue if you want to help shape where it goes, or drop into
+      the Discord if you'd rather talk it through than write it up.</p>
+      <div class="links">
+        <a href="https://github.com/codetocloudorg/oporder">GitHub</a>
+        <a href="https://github.com/codetocloudorg/oporder/blob/main/SPEC.md">Read the spec</a>
+        <a href="https://discord.gg/vwfwq2EpXJ">Discord</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Apache License 2.0</span>
+    <span>Built by <a href="https://codetocloud.io">Code To Cloud</a></span>
+    <span><a href="https://github.com/codetocloudorg/oporder">github.com/codetocloudorg/oporder</a></span>
+  </footer>
+
+</main>
+</body>
+</html>
