@@ -49,6 +49,13 @@ the idea, not the tool. Follow along, open an issue if you want to help shape wh
 or drop into [Code To Cloud's Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it
 through than write it up.
 
+The name is reserved everywhere it needs to be ahead of a real release — the domain
+([oporder.dev](https://oporder.dev)) and [npm](https://www.npmjs.com/package/oporder)
+(`oporder@0.0.1`, an honest placeholder — `npm install -g oporder` today just tells you
+there's nothing to install yet). GitHub Releases will be the primary way to get the binary
+once one exists; npm becomes a real installer at the same time, for anyone who'd rather
+`npm install -g oporder` than download a release directly.
+
 ## Planned architecture
 
 - An **MCP server** for read-only cloud inventory, cost, and Well-Architected-style checks —
