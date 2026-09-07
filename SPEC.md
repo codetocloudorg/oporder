@@ -152,14 +152,36 @@ preference changes what gets planned for. It never changes what gets found.
 
 ### 3.3 EXECUTION — what it costs, in both directions
 
-- **Destination hosting cost**, live-priced (§5.6), compared across every viable target —
-  including "stay exactly where you are" and "repatriate to owned hardware" as first-class
-  options, not footnotes.
+- **Destination hosting cost**, live-priced (§5.6), compared **side by side across every
+  viable R for the same workload**, not just the one recommended. Showing spend across
+  multiple migration strategies side by side rather than a single number is a standard,
+  unremarkable practice in this category generally — Azure Migrate's Business Case tool is
+  one public example of it, cited here only as evidence the approach is proven and expected,
+  not as something being replicated. Including "stay exactly where you are" and "repatriate
+  to owned hardware" as first-class rows in that comparison, not footnotes.
 - **The cost of doing the work**: engineering effort estimate (§5.6), plus transparent
   reporting of what generating *this report* itself cost in tokens — if OpOrder isn't willing
   to show its own cost, it has no business estimating anyone else's.
-- **Sequencing**: which workloads block which, surfaced from the dependency graph, not
-  guessed.
+- **Wave planning** — named and elevated from a bare "sequencing" line. Grouping workloads
+  that communicate frequently so they migrate together, rather than letting a dependency get
+  split across time and take on latency or connectivity risk, is a long-established, generic
+  practice in migration planning — visible in AWS Migration Hub's public documentation among
+  others, named here as a factual reference point for an industry-standard idea, not a
+  vendor-specific technique. Built entirely from the dependency graph §5.0 already constructs
+  for correlation — no new data collection, just a named output from data OpOrder already has,
+  the same way §5.0's orphan-resource list is a finding, not a new scan.
+- **CSV export of every scorecard** (`waf-scorecard.csv`, `debt-delta.csv`, etc.), alongside
+  the JSON. A finance or procurement stakeholder wanting a spreadsheet rather than a JSON file
+  or a rendered chart is an ordinary, expected requirement for this kind of report — cheap to
+  add since the data's already structured, and simply overlooked in the original draft rather
+  than deliberately excluded.
+
+**One capability intentionally left out, named rather than silently skipped**: a
+conversational, chat-driven assessment mode is a reasonable idea for a future version, and
+it's genuinely useful in that shape elsewhere in the category. It's not adopted here — per
+§11's own scope-discipline finding, an interactive chat interface is a real, separate surface
+to build and maintain on top of everything already committed, and nothing about it is needed
+to deliver the core value described in §14's journeys.
 
 **A plain disclaimer belongs in the output itself, not just Apache 2.0's warranty
 boilerplate that nobody actually reads.** Every EXECUTION.md carries one line, unhedged:
@@ -466,6 +488,14 @@ to be *stated* as a deliberate choice, not silently glossed over) or drops the r
 cross-provider comparisons and keeps it AWS-only, which then isn't actually a canonical
 six-pillar rubric at all. **This decision is unmade as of this document** and needs resolving
 before §5.4 ships in v0.4, not discovered mid-implementation.
+
+**One data point worth having before that decision gets made**: Azure's own *Business Case*
+tool — a separate product from the Well-Architected Framework itself — started including
+carbon-emissions estimates in 2025, despite Azure's WAF having no formal Sustainability
+pillar to hang that number on. That's Microsoft independently reaching the same conclusion
+this section is wrestling with: sustainability is scoreable and worth reporting even without
+a first-class framework pillar behind it. Reasonable precedent for scoring it in the debt/cost
+outputs (§5.6, §5.8) even if §5.4's canonical WAF rubric ultimately drops it as a formal row.
 
 ### 5.5 SDLC maturity scoring
 
