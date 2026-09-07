@@ -7,6 +7,10 @@ bug in the project, not in you. Open an issue.
 expose an account or a repo, not just a wrong recommendation? Stop, don't file it here — see
 [SECURITY.md](SECURITY.md) for private disclosure instead.
 
+**Want to talk it through before writing anything** — a design question, a "would this PR
+even be welcome" check, or just thinking out loud? [Code To Cloud's
+Discord](https://discord.gg/vwfwq2EpXJ) is faster than an issue for that kind of thing.
+
 ## Before you write code
 
 Read [SPEC.md](SPEC.md) §1 (non-negotiable design principles) and §4.2 (complexity is

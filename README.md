@@ -45,8 +45,9 @@ actually done, that's a separate, explicitly-scoped engagement with whoever you 
 ## Status
 
 Early. Building in public. No released binary yet — this repo currently holds the shape of
-the idea, not the tool. Follow along, or open an issue if you want to help shape where it
-goes.
+the idea, not the tool. Follow along, open an issue if you want to help shape where it goes,
+or drop into [Code To Cloud's Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it
+through than write it up.
 
 ## Planned architecture
 
@@ -63,4 +64,7 @@ Apache License 2.0 — see [LICENSE](LICENSE).
 
 ---
 
-Built by [Code To Cloud](https://codetocloud.io).
+Built by [Code To Cloud](https://codetocloud.io) —
+[Discord](https://discord.gg/vwfwq2EpXJ) ·
+[GitHub](https://github.com/codetocloudorg) ·
+[Podcast](https://open.spotify.com/show/1iOZfFVamUk7CJPOvtU00v)

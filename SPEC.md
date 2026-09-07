@@ -892,8 +892,11 @@ tabs:
 - A live-updating "what it found" wall of anonymized, opt-in example findings from real
   community runs, once that data exists — social proof that's actually true, not testimonial
   copy.
-- Footer: license, GitHub link, Code To Cloud attribution, nothing else competing for
-  attention.
+- Footer: license, GitHub link, Discord link, Code To Cloud attribution — the real, existing
+  Code To Cloud community channel (`discord.gg/vwfwq2EpXJ`), not a project-specific server
+  spun up and then left to go quiet. Nothing else competing for attention; Instagram/YouTube/
+  the podcast stay off this specific footer since they're not where someone evaluating a CLI
+  tool is deciding anything.
 - **Meets WCAG 2.2 AA per §6.4** — same standard as the HTML report, same reasoning: a site
   whose whole pitch is transparency doesn't get an exception from being usable by everyone
   who visits it.
