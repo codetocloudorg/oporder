@@ -930,13 +930,34 @@ AI-tool testing goes wrong:
 - `SPEC.md` — this document, kept current as the source of truth, not a launch artifact that
   goes stale.
 - `docs/rubric.md` — the full 5/7-Rs and WAF scoring logic in plain language, so a skeptical
-  reader can audit the reasoning without reading Go source.
+  reader can audit the reasoning without reading Go source. **Illustrated with a Mermaid
+  decision-tree mind map of the 5/7-Rs tie-break logic from §5.3** — the same tool this
+  document has used throughout itself, chosen for the same reasons every other tooling
+  decision in this spec has been made: free, text-based, git-diffable, renders natively on
+  GitHub with no build step, and clears the open-source-or-free bar §1 now states as a
+  principle for anything this project depends on.
 - `docs/architecture/` — one page per MCP server / skill / workflow, each with its own
-  "what it does, what it doesn't do, what it never sends anywhere."
+  "what it does, what it doesn't do, what it never sends anywhere," **each opening with a
+  Mermaid diagram of that specific piece** — the same style as §4's system diagram and §0's
+  vision, not a new documentation format introduced just for this. A contributor should be
+  able to look at one picture and know whether the file they're about to open is the piece
+  they actually need to change.
+- **A single mind map tying §4.7's claim together**, showing which parts of OpOrder's own
+  architecture map onto which piece of the Code To Cloud Agentic Engineering vault's canon —
+  the diamond pattern, the fresh-context verification rule, the harness/loop distinction. This
+  is the one new diagram this pass actually adds, and it exists to make §4.7's claim
+  checkable at a glance instead of requiring someone to cross-reference a dozen citations
+  scattered through the document to verify it's true.
 - `CONTRIBUTING.md` — how to add a fifth cloud provider, written as an actual walkthrough
   with a real PR as the reference example once one exists, not an abstract checklist.
 - Every generated report is itself documentation — self-describing enough that someone
   encountering it with zero context on OpOrder can still follow the reasoning.
+
+**What this deliberately isn't**: an open-ended commitment to illustrate everything. Every
+diagram or mind map above is tied to a documentation page that already exists in this section
+or a claim already made elsewhere in this document — the same "complexity is earned" and
+scope discipline §4.2 and §11 already apply everywhere else, applied here to documentation
+tooling instead of code.
 
 ---
 
