@@ -245,13 +245,15 @@ flowchart TB
 > [!success] Distribution names reserved, shipped ahead of the binary
 > `oporder` and `oporder-cli` are secured everywhere they needed to be before anyone else
 > could take them: the GitHub repo and org (`codetocloudorg/oporder`), the domain
-> (`oporder.dev`, live per §9), and now **`oporder` on npm** — published as `oporder@0.0.1`,
-> an honest placeholder whose `postinstall` states plainly that no binary exists yet rather
-> than pretending to install one. GitHub Releases stays the primary distribution path
-> described below; the npm package becomes a real installer wrapper (a `postinstall` that
-> fetches the right platform binary from GitHub Releases, the same pattern esbuild and swc
-> use) the moment a real binary exists to wrap, at which point this becomes a version bump,
-> not a new package.
+> (`oporder.dev`, live per §9), **`oporder` on npm** — published as `oporder@0.0.1`, an
+> honest placeholder whose `postinstall` states plainly that no binary exists yet rather than
+> pretending to install one — and now **`codetocloudorg/homebrew-tap`** with an `oporder`
+> formula that `odie`s with a clear message and a link to the real reasoning engine
+> (`go run ./cmd/sample-report`) rather than silently failing or pretending to install
+> something that doesn't exist. GitHub Releases stays the primary distribution path described
+> below; both the npm package and the Homebrew formula become real installers the moment a
+> real tagged binary release exists to wrap, at which point each becomes a version bump, not
+> a new package or formula.
 
 - **The CLI is the only thing users install.** A single Go binary, no runtime dependency,
   same reasoning Infracost, Steampipe, and driftctl already made — it's why they all cross-
@@ -379,6 +381,35 @@ user choosing (and paying for) their own model. OpOrder adopts the same pattern:
 - The token-cost transparency already required by §3.3 is provider-agnostic by construction:
   whatever the user's configured provider bills, that's the number shown, in the currency and
   at the rate that provider actually charges — no OpOrder markup, ever.
+
+### 4.6a Cloud credential onboarding — as easy as the LLM key, not harder
+
+The same "trivially easy, actionable, never a dead end" standard §4.6 sets for the LLM key
+applies identically to the cloud credentials each provider connector needs — this is where a
+real user actually gets stuck if it isn't kept simple, since three different providers means
+three different credential shapes to onboard, not one. The pattern each connector already
+uses (§5.2), validated against real accounts during this project's own development, not just
+designed on paper:
+
+- **Reuse what's already there before asking for anything new.** The Azure connector
+  authenticates via `azidentity`'s CLI credential, reusing an existing `az login` session —
+  a user with the Azure CLI already set up needs zero additional OpOrder-specific setup. AWS
+  reuses the SDK's default credential chain (`aws configure`, environment variables, or an
+  IAM role) the same way. Neither connector invents a new credential format to learn.
+- **Where a provider has no equivalent CLI session to reuse (Cloudflare), the fallback is one
+  file, not a flag or an environment variable typed into a terminal history.** A token saved
+  to a local, permission-restricted file (`0600`) and read by path — the same mechanism
+  SECURITY.md already specifies for the LLM key, applied here for consistency, not
+  reinvented per provider.
+- **A missing credential fails with the exact next step, not a stack trace** — matching
+  §13.1's actionable-error standard: which provider is missing, where to get a credential,
+  and the one command that fixes it, every time.
+- **This ease has to survive the move into an agent host, not just the standalone CLI.**
+  §4.3 already commits to Claude Code, opencode, Codex, and Grok as target integrations —
+  the credential-onboarding story above has to be identical whether OpOrder is invoked
+  directly or through one of those hosts' MCP connections, once §4.2's threshold for that
+  split is actually met. A setup flow that's simple standalone and painful through an agent
+  host would quietly fail the same "low barrier" principle §1 already commits to elsewhere.
 
 ### 4.7 Built using the practices it teaches
 
