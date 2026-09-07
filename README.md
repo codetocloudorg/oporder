@@ -54,9 +54,23 @@ go run ./cmd/sample-report
 ```
 
 That runs the actual 5/7-Rs rubric and debt-delta engine against five illustrative sample
-workloads and prints real, computed JSON — the genuine reasoning, on fixture data, since
-there's no live-account connector wired into the CLI itself yet. Requires
+workloads and prints real, computed JSON — the genuine reasoning, on fixture data. Requires
 [Go](https://go.dev/dl/) installed, nothing else.
+
+**Have a real AWS, Azure, or Cloudflare account?** `oporder scan` is real too — live,
+read-only inventory across whichever providers you configure:
+
+```
+export AWS_REGION=us-east-1                          # uses your existing AWS credentials
+export OPORDER_AZURE_SUBSCRIPTION_ID=<subscription>   # uses your existing `az login` session
+echo "<cloudflare-token>" > ~/.cloudflare_token       # from dash.cloudflare.com/profile/api-tokens
+
+go run ./cmd/oporder scan
+```
+
+Set at least one; skip the rest. It writes a real `SITUATION.md` from live data — no code
+analysis or correlation wired in yet (see SPEC.md §10 for what's built so far), just the
+honest inventory.
 
 ## Status
 
@@ -68,11 +82,15 @@ Cloud's Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it through 
 up.
 
 The name is reserved everywhere it needs to be ahead of a real release — the domain
-([oporder.dev](https://oporder.dev)) and [npm](https://www.npmjs.com/package/oporder)
+([oporder.dev](https://oporder.dev)), [npm](https://www.npmjs.com/package/oporder)
 (`oporder@0.0.1`, an honest placeholder — `npm install -g oporder` today just tells you
-there's nothing to install yet). GitHub Releases will be the primary way to get the binary
-once one exists; npm becomes a real installer at the same time, for anyone who'd rather
-`npm install -g oporder` than download a release directly.
+there's nothing to install yet), and a [Homebrew
+tap](https://github.com/codetocloudorg/homebrew-tap) (`brew tap codetocloudorg/tap && brew
+install oporder` — same honesty, it fails with a clear message and a link to the working
+`sample-report` command rather than pretending to install a binary that doesn't exist).
+GitHub Releases will be the primary way to get the binary once one exists; npm and Homebrew
+both become real installers at the same time, for anyone who'd rather use the package manager
+they already have than download a release directly.
 
 ## Planned architecture
 

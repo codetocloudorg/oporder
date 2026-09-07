@@ -2,3 +2,7 @@
 /dist/
 *.test
 *.tgz
+/SITUATION.md
+/MISSION.md
+/EXECUTION.md
+/oporder-report/
