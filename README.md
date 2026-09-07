@@ -42,12 +42,30 @@ trustworthy — so OpOrder stops at the plan. If you want the migration or moder
 actually done, that's a separate, explicitly-scoped engagement with whoever you choose,
 [Code To Cloud](https://codetocloud.io) included.
 
+## Try it right now
+
+No released binary yet, but the reasoning engine is real and working today. Three commands,
+copy-paste, nothing to configure:
+
+```
+git clone https://github.com/codetocloudorg/oporder.git
+cd oporder
+go run ./cmd/sample-report
+```
+
+That runs the actual 5/7-Rs rubric and debt-delta engine against five illustrative sample
+workloads and prints real, computed JSON — the genuine reasoning, on fixture data, since
+there's no live-account connector wired into the CLI itself yet. Requires
+[Go](https://go.dev/dl/) installed, nothing else.
+
 ## Status
 
-Early. Building in public. No released binary yet — this repo currently holds the shape of
-the idea, not the tool. Follow along, open an issue if you want to help shape where it goes,
-or drop into [Code To Cloud's Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it
-through than write it up.
+Early. Building in public. No released binary yet — this repo currently holds real, tested
+engines (the rubric, the debt-delta model, read-only cloud connectors for AWS, Azure, and
+Cloudflare) and a CLI that doesn't wire them together end-to-end yet, not the finished tool.
+Follow along, open an issue if you want to help shape where it goes, or drop into [Code To
+Cloud's Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it through than write it
+up.
 
 The name is reserved everywhere it needs to be ahead of a real release — the domain
 ([oporder.dev](https://oporder.dev)) and [npm](https://www.npmjs.com/package/oporder)

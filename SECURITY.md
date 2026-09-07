@@ -74,6 +74,14 @@ against real accounts (§7's live-credential integration path exists specificall
 mocked fixtures alone eventually drift from reality) — the account's existence is fine to
 mention in the abstract; anything that identifies it is not.
 
+**Every commit touching a provider connector gets scanned before it's made, not after.** A
+quick `grep` across staged files for known account IDs, ARNs, tenant names, and any live
+token fragments, run as a real step before `git commit` — not a mental check. This caught a
+real instance during this project's own early development (a subscription name that made it
+into a commit message) within minutes of it happening, which is exactly the point: cheap,
+mechanical, and it works precisely because it doesn't rely on remembering to be careful in
+the moment.
+
 ### 2. Prompt injection is the real, open threat for this category of tool — not a hypothetical
 
 OpOrder reads two kinds of content it does not control: arbitrary source code in the
