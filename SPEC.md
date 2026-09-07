@@ -963,6 +963,20 @@ tooling instead of code.
 
 ## 9. Website
 
+> [!success] Shipped, not just planned — status as of this pass
+> Live at **[oporder.dev](https://oporder.dev)**, served over GitHub Pages from
+> `main`/`docs`, HTTPS enforced with a certificate covering both the apex and `www`. DNS runs
+> through Cloudflare (DNS-only, not proxied, per §4.6's SSL-handshake reasoning). §9.1's
+> discoverability commitments are live, not aspirational: `robots.txt` allows everything and
+> points to a real `sitemap.xml`; `llms.txt` is published; the site is registered and verified
+> in both **Google Search Console** and **Bing Webmaster Tools**, with the sitemap submitted
+> to both. What's live is the honest placeholder described below and in §9.2 — real copy,
+> the terminal-window mockup of §6.1's illustrative scan, and the raccoon mark — not yet the
+> full embedded-demo centerpiece, which still waits on a working binary per the sequencing
+> already agreed. This section stays the design record for what the site should keep becoming;
+> it isn't rewritten to only describe what's live today, because the target is still the
+> fuller vision below.
+
 **Checked the real thing before writing this, not a vague memory of it** — omarchy.org, in
 detail. What actually makes it work, concretely: dark-first with vivid, saturated accent
 colors rather than a muted "professional" palette; real terminal recordings and real
@@ -1014,21 +1028,30 @@ actually is:
 
 ### 9.1 Discoverable and shareable — not left as an afterthought
 
-Raised earlier in this project's history and never actually written down until now:
+Raised earlier in this project's history, and now genuinely shipped rather than just written
+down as an intention:
 
-- **Real Open Graph and Twitter Card meta tags** on every page — title, description, and a
-  purpose-built social image, not whatever the page happens to render into a screenshot.
-  Pulled from the same source of truth as the GitHub repo description, so the pitch is
-  identical everywhere it's seen, not reworded per surface.
-- **`robots.txt` that allows everything and points to a sitemap** — this is a site that wants
-  to be found and indexed, the opposite problem from the Disallow-plus-noindex contradiction
-  that shows up everywhere else in SEO work. No page on this site should ever carry a
-  `noindex` tag.
-- **`llms.txt`**, already committed to in §4.3, lives here — the site's own pitch has to be
-  legible to an agent evaluating whether to recommend OpOrder, not just to a search crawler.
-- **A real reviews/mentions section**, distinct from the "what it found" wall above — actual
-  GitHub stars, actual third-party writeups, once either exists. Left visibly empty rather
-  than filled with placeholder praise until something real is there to put in it.
+- **Open Graph and Twitter Card meta tags** — ✅ live on the homepage, title and description
+  pulled from the same pitch used in the GitHub repo description, not reworded per surface. A
+  purpose-built social preview image is the one piece still outstanding — the current tags
+  render correctly without one, but a dedicated image is a real improvement, not required to
+  function.
+- **`robots.txt` that allows everything and points to a sitemap** — ✅ live at
+  `oporder.dev/robots.txt`, confirmed serving exactly as written, the opposite problem from
+  the Disallow-plus-noindex contradiction that shows up everywhere else in SEO work. No page
+  on this site carries a `noindex` tag.
+- **`sitemap.xml`** — ✅ live, and **submitted to both Google Search Console and Bing Webmaster
+  Tools**, both verified via DNS TXT record on Cloudflare. Indexing status is the one thing
+  still pending, since neither engine indexes a brand-new domain instantly — worth checking
+  back on both consoles' coverage reports rather than assuming silence means success.
+- **`llms.txt`**, committed to in §4.3 — ✅ live at `oporder.dev/llms.txt`, so the site's own
+  pitch is legible to an agent evaluating whether to recommend OpOrder on someone's behalf,
+  not just to a search crawler.
+- **A real reviews/mentions section**, distinct from the "what it found" wall above —
+  **not yet live**, and correctly so: there are no GitHub stars or third-party writeups to
+  show yet. Stays visibly absent rather than filled with placeholder praise until something
+  real exists to put in it — the same discipline as everything else in this document that
+  refuses to assert a number before it's earned.
 
 ### 9.2 Logo and mascot
 
