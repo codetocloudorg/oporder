@@ -16,25 +16,33 @@
 <meta name="twitter:title" content="OpOrder — vendor-neutral cloud & code assessment">
 <meta name="twitter:description" content="Reads your code and your live infrastructure, tells you honestly what's actually there, and hands you a plan — without an opinion about which cloud you should end up on.">
 
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22%230d0f12%22/><text x=%2250%22 y=%2268%22 font-size=%2264%22 text-anchor=%22middle%22 fill=%22%23e8a33d%22 font-family=%22monospace%22>&gt;_</text></svg>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230d0f12'/%3E%3Cpath d='M28 38 L20 20 L38 30 Z M72 38 L80 20 L62 30 Z' fill='%23c7ccd4'/%3E%3Cellipse cx='50' cy='50' rx='26' ry='22' fill='%23c7ccd4'/%3E%3Cpath d='M27 44 Q50 34 73 44 Q68 56 50 58 Q32 56 27 44 Z' fill='%232a2e34'/%3E%3Ccircle cx='40' cy='47' r='3.2' fill='%23e8a33d'/%3E%3Ccircle cx='60' cy='47' r='3.2' fill='%23e8a33d'/%3E%3C/svg%3E">
 
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0d0f12;
-    --bg-raised: #16191d;
-    --border: #2a2e34;
+    --bg: #0a0c0f;
+    --bg-raised: #14171b;
+    --bg-terminal: #0e1013;
+    --border: #262a30;
     --text: #e8e8e6;
     --text-dim: #9a9fa6;
     --accent: #e8a33d;
     --accent-dim: #8a6528;
+    --accent-glow: rgba(232, 163, 61, 0.14);
     --good: #6fbf73;
     --bad: #d97757;
+    --cyan: #6fb8bf;
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
     margin: 0;
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, var(--accent-glow), transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.02) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.02) 40px),
+      var(--bg);
     color: var(--text);
     font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
     line-height: 1.6;
@@ -42,43 +50,96 @@
   }
   a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-dim); }
   a:hover { border-bottom-color: var(--accent); }
-  main { max-width: 720px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
-  section { margin-bottom: 4rem; }
+  main { max-width: 760px; margin: 0 auto; padding: 4.5rem 1.5rem 6rem; }
+  section { margin-bottom: 4.5rem; }
+
+  .hero { text-align: center; margin-bottom: 3.5rem; }
+  .mascot { width: 84px; height: 84px; margin: 0 auto 1.25rem; display: block; }
   .kicker {
     color: var(--accent);
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
+    font-size: 0.82rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    margin: 0 0 0.75rem;
+    margin: 0 0 0.9rem;
   }
   h1 {
-    font-size: clamp(2rem, 5vw, 2.75rem);
-    margin: 0 0 0.5rem;
-    line-height: 1.15;
+    font-size: clamp(2.4rem, 7vw, 3.4rem);
+    margin: 0 0 0.75rem;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
   }
   h2 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     color: var(--text-dim);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     margin: 0 0 1.25rem;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
-  .tagline { font-size: 1.15rem; color: var(--text-dim); margin: 0 0 2rem; max-width: 46ch; }
+  h2::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .tagline {
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    margin: 0 auto 2rem;
+    max-width: 46ch;
+  }
   .install {
     background: var(--bg-raised);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem 1.25rem;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.75rem;
     color: var(--text-dim);
     font-size: 0.95rem;
   }
   .install .prompt { color: var(--accent); }
-  .quotes { list-style: none; margin: 0; padding: 0; }
+
+  /* --- terminal window --- */
+  .terminal {
+    background: var(--bg-terminal);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02);
+  }
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.7rem 0.9rem;
+    background: var(--bg-raised);
+    border-bottom: 1px solid var(--border);
+  }
+  .terminal-bar .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .terminal-bar .dot.r { background: #e5675e; }
+  .terminal-bar .dot.y { background: #e5b95e; }
+  .terminal-bar .dot.g { background: #5ec97a; }
+  .terminal-bar .title { margin-left: auto; margin-right: auto; font-size: 0.78rem; color: var(--text-dim); }
+  .terminal pre {
+    margin: 0;
+    padding: 1.25rem 1.4rem 1.5rem;
+    font-size: 0.86rem;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .t-prompt { color: var(--accent); }
+  .t-dim { color: var(--text-dim); }
+  .t-good { color: var(--good); }
+  .t-bad { color: var(--bad); }
+  .t-cyan { color: var(--cyan); }
+  .t-white { color: var(--text); }
+  .illustrative {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-top: 0.6rem;
+  }
+
+  .quotes { list-style: none; margin: 0 0 1.5rem; padding: 0; }
   .quotes li {
     padding: 0.9rem 1rem;
     background: var(--bg-raised);
@@ -88,18 +149,32 @@
     font-style: italic;
     color: var(--text);
   }
+
+  /* --- the 7 Rs strip --- */
+  .rs-strip { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1.5rem; }
+  .r-chip {
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+  .r-chip.n { border-color: var(--accent-dim); color: var(--accent); }
+
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 0.7rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th, td { text-align: left; padding: 0.8rem 0.7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
   th { color: var(--accent); font-weight: normal; width: 9rem; }
   td { color: var(--text-dim); }
+
   .status-box {
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.25rem 1.5rem;
-    background: var(--bg-raised);
+    border-radius: 10px;
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(180deg, var(--bg-raised), var(--bg));
   }
   .status-box .dot { color: var(--accent); }
-  .links { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 0.5rem; }
+  .links { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.75rem; }
   footer {
     border-top: 1px solid var(--border);
     margin-top: 3rem;
@@ -110,22 +185,33 @@
     flex-wrap: wrap;
     gap: 0.4rem 1rem;
     justify-content: space-between;
+    align-items: center;
   }
-  .no-vendor {
-    color: var(--bad);
+  .footer-mascot { width: 22px; height: 22px; opacity: 0.7; }
+  .no-vendor { color: var(--bad); }
+
+  @media (max-width: 480px) {
+    .terminal pre { font-size: 0.74rem; }
   }
 </style>
 </head>
 <body>
 <main>
 
-  <section>
-    <p class="kicker">Situation / Mission / Execution</p>
+  <section class="hero">
+    <svg class="mascot" viewBox="0 0 100 100" role="img" aria-label="OpOrder raccoon mark">
+      <path d="M28 38 L20 20 L38 30 Z M72 38 L80 20 L62 30 Z" fill="#c7ccd4"/>
+      <ellipse cx="50" cy="50" rx="26" ry="22" fill="#c7ccd4"/>
+      <path d="M27 44 Q50 34 73 44 Q68 56 50 58 Q32 56 27 44 Z" fill="#2a2e34"/>
+      <circle cx="40" cy="47" r="3.4" fill="#e8a33d"/>
+      <circle cx="60" cy="47" r="3.4" fill="#e8a33d"/>
+      <path d="M46 55 L54 55 L50 60 Z" fill="#2a2e34"/>
+    </svg>
+    <p class="kicker">Situation · Mission · Execution</p>
     <h1>OpOrder</h1>
     <p class="tagline">Vendor-neutral assessment for cloud migration and application
-    modernization. Reads your code and your live infrastructure, tells you honestly what's
-    actually there, and hands you a plan — without an opinion about which cloud you should
-    end up on.</p>
+    modernization — reads your code and your live infrastructure, tells you honestly what's
+    actually there, and hands you a plan.</p>
     <div class="install">
       <span class="prompt">$</span>
       <span>binary not released yet — <a href="https://github.com/codetocloudorg/oporder">follow progress on GitHub</a></span>
@@ -133,7 +219,36 @@
   </section>
 
   <section>
-    <h2>Why</h2>
+    <h2>what a run looks like</h2>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="title">oporder — zsh</span>
+      </div>
+<pre><span class="t-prompt">$</span> <span class="t-white">oporder scan .</span>
+
+  OpOrder v0.1.0 <span class="t-dim">· scanning ./ (git: main @ 4f2a91c)</span>
+
+  <span class="t-cyan">⠋</span> Reading code<span class="t-dim">................</span> 142 services detected
+  <span class="t-cyan">⠋</span> Connecting to AWS<span class="t-dim">...........</span> read-only, us-east-1 + 3 more regions
+  <span class="t-cyan">⠋</span> Fanning out assessment<span class="t-dim">......</span> 142 workers, 3 fresh verifiers each
+  <span class="t-cyan">⠋</span> Pricing (live)<span class="t-dim">...............</span> AWS · GCP · Azure, queried live
+  <span class="t-cyan">⠋</span> Synthesizing report<span class="t-dim">.........</span>
+
+  <span class="t-good">Done</span> in 4m12s <span class="t-dim">·</span> $0.38 in LLM spend <span class="t-dim">·</span> full report: ./oporder-report/
+
+  12 retain · 34 rehost · 41 replatform · 28 refactor · 9 rearchitect · 6 repurchase · <span class="t-bad">12 retire</span>
+
+  <span class="t-dim">Biggest finding:</span> <span class="t-white">billing-service</span> has 4 undocumented dependencies on a
+  deprecated internal API. See SITUATION.md#billing-service.
+
+  <span class="t-dim">Next:</span> oporder report --open</pre>
+    </div>
+    <p class="illustrative">illustrative — no run has produced these numbers yet; see the spec for why</p>
+  </section>
+
+  <section>
+    <h2>why</h2>
     <p>Every existing agentic migration tool is built by a cloud provider with a stake in the
     answer. AWS Transform recommends AWS. Azure's tooling recommends Azure. That's not a flaw
     in those tools — it's their business model. OpOrder has no cloud to sell, so it can say
@@ -150,16 +265,33 @@
   </section>
 
   <section>
-    <h2>What it produces</h2>
+    <h2>the seven calls it can make</h2>
+    <div class="rs-strip">
+      <span class="r-chip n">retain</span>
+      <span class="r-chip">rehost</span>
+      <span class="r-chip">replatform</span>
+      <span class="r-chip">refactor</span>
+      <span class="r-chip">rearchitect</span>
+      <span class="r-chip">repurchase</span>
+      <span class="r-chip n">retire</span>
+    </div>
+    <p>Two of the seven are highlighted on purpose — <strong>retain</strong> and
+    <strong>retire</strong> generate zero migration work, and they're weighted identically to
+    the other five. A tool that can't reach either honestly isn't neutral, it's just slower
+    than the vendor it's replacing.</p>
+  </section>
+
+  <section>
+    <h2>what it produces</h2>
     <table>
       <tr><th>Situation</th><td>The honest as-is: architecture diagram, dependency map, documentation — generated from your actual code and live infrastructure, not from what the wiki claims.</td></tr>
-      <tr><th>Mission</th><td>The recommendation: rehost, replatform, refactor, rearchitect, repurchase, retire, or retain — per workload, with the reasoning and a counter-case shown.</td></tr>
+      <tr><th>Mission</th><td>The recommendation: one of the seven above, per workload, with the reasoning and a counter-case shown.</td></tr>
       <tr><th>Execution</th><td>Cost estimate, effort estimate, and sequencing — everything needed to hand to a build team, yours or anyone else's.</td></tr>
     </table>
   </section>
 
   <section>
-    <h2>What it deliberately doesn't do</h2>
+    <h2>what it deliberately doesn't do</h2>
     <p>OpOrder assesses and recommends. It does not execute. <span class="no-vendor">The
     moment the tool that makes the recommendation also profits from carrying it out, the
     recommendation stops being trustworthy</span> — so OpOrder stops at the plan. If you want
@@ -184,6 +316,11 @@
   <footer>
     <span>Apache License 2.0</span>
     <span>Built by <a href="https://codetocloud.io">Code To Cloud</a></span>
+    <svg class="footer-mascot" viewBox="0 0 100 100" role="presentation" aria-hidden="true">
+      <path d="M28 38 L20 20 L38 30 Z M72 38 L80 20 L62 30 Z" fill="#9a9fa6"/>
+      <ellipse cx="50" cy="50" rx="26" ry="22" fill="#9a9fa6"/>
+      <path d="M27 44 Q50 34 73 44 Q68 56 50 58 Q32 56 27 44 Z" fill="#0a0c0f"/>
+    </svg>
     <span><a href="https://github.com/codetocloudorg/oporder">github.com/codetocloudorg/oporder</a></span>
   </footer>
 
