@@ -24,6 +24,19 @@ something if the choice is backed by the same rigor a hyperscaler's own tooling 
 why §13 holds this project to real versioning, release, and governance discipline rather than
 letting "it's open source" stand in for engineering seriousness.
 
+**Say the exciting part out loud, too — this doesn't have to be sold as cautious.** A
+25-year-old, hand-coded Java portal that took five months to build the first time got rebuilt
+in four to five days (§2.0). Bun's Zig-to-Rust port — hundreds of thousands of lines,
+behavior-identical — ran in days, not years. That's not a marginal productivity gain, it's a
+different order of magnitude, and the story this project tells should carry that energy
+rather than undersell it into a compliance checklist. **What doesn't change while telling that
+story**: OpOrder itself never does the rewrite. It's the neutral second opinion that tells you
+honestly whether a rewrite is warranted and what it should target — genuinely amazing
+execution is real, worth being loud about, and still someone else's job to carry out, by
+design (§1's second principle). Selling the excitement of what AI-assisted rewrites can do is
+not the same claim as OpOrder doing them, and conflating the two is exactly the trust-eroding
+move this whole document exists to avoid.
+
 ---
 
 ## 1. Non-negotiable design principles
