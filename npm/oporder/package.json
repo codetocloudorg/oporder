@@ -1,0 +1,32 @@
+{
+  "name": "oporder",
+  "version": "0.0.1",
+  "description": "Vendor-neutral assessment for cloud migration and application modernization. Placeholder reserving this name — no binary published yet, see the repository.",
+  "homepage": "https://oporder.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codetocloudorg/oporder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/codetocloudorg/oporder/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "Code To Cloud <https://codetocloud.io>",
+  "keywords": [
+    "cloud-migration",
+    "application-modernization",
+    "aws",
+    "gcp",
+    "azure",
+    "cloudflare",
+    "well-architected",
+    "devops"
+  ],
+  "scripts": {
+    "postinstall": "node ./postinstall.js"
+  },
+  "files": [
+    "postinstall.js",
+    "README.md"
+  ]
+}
