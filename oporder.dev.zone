@@ -1,0 +1,32 @@
+; BIND zone file for oporder.dev — Cloudflare-compatible import
+; Points the apex domain and www to GitHub Pages.
+; Cloudflare will replace the SOA and NS records with its own on import —
+; those two are placeholders required for valid zone-file syntax only.
+; The A, AAAA, and CNAME records below are the ones that actually matter.
+
+$ORIGIN oporder.dev.
+$TTL 3600
+
+@       IN      SOA     ns.cloudflare.com. dns.cloudflare.com. (
+                        2026010100 ; serial
+                        10000      ; refresh
+                        2400       ; retry
+                        604800     ; expire
+                        3600 )     ; minimum TTL
+
+@       IN      NS      ns.cloudflare.com.
+
+; --- GitHub Pages apex A records (IPv4) ---
+@       IN      A       185.199.108.153
+@       IN      A       185.199.109.153
+@       IN      A       185.199.110.153
+@       IN      A       185.199.111.153
+
+; --- GitHub Pages apex AAAA records (IPv6) ---
+@       IN      AAAA    2606:50c0:8000::153
+@       IN      AAAA    2606:50c0:8001::153
+@       IN      AAAA    2606:50c0:8002::153
+@       IN      AAAA    2606:50c0:8003::153
+
+; --- www subdomain, points to the GitHub Pages default host ---
+www     IN      CNAME   codetocloudorg.github.io.
