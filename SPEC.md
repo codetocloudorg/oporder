@@ -693,8 +693,11 @@ tabs:
 > §10's roadmap is all engineering milestones. The earlier research in this project
 > established that enterprise adoption of a tool like this is gated by security/compliance
 > review, not by feature completeness — that review cycle (SOC2 questions, data-flow
-> diagrams, a security.txt, a documented threat model for the MCP servers) isn't a line item
-> anywhere above and should be, likely starting around v0.3–v0.4 once real pilot users exist.
+> diagrams) isn't a line item anywhere above and should be, likely starting around v0.3–v0.4
+> once real pilot users exist. [SECURITY.md](SECURITY.md) now covers the disclosure process
+> and the threat model (credential handling, the prompt-injection risk inherent to reading
+> untrusted repos and cloud metadata, MCP scope-minimization) — that part of this gap is
+> closed; the compliance-review *timeline* itself still isn't scheduled anywhere.
 
 ---
 
@@ -768,4 +771,7 @@ anyone noticing for months:
   this workflow architecture is built on), `08-Harness-and-Loops.md`,
   `09-Agent-Design-Patterns.md`
 - [README.md](README.md) — the pitch
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to send a real PR after reading one file
+- [SECURITY.md](SECURITY.md) — disclosure process and the threat model, including the
+  prompt-injection risk this category of tool carries by design
 - [LICENSE](LICENSE) — Apache 2.0

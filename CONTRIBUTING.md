@@ -3,6 +3,10 @@
 The short version: if you had to read more than this one file to send a real PR, that's a
 bug in the project, not in you. Open an issue.
 
+**Found a security issue** — a credential leak, a prompt-injection path, anything that could
+expose an account or a repo, not just a wrong recommendation? Stop, don't file it here — see
+[SECURITY.md](SECURITY.md) for private disclosure instead.
+
 ## Before you write code
 
 Read [SPEC.md](SPEC.md) §1 (non-negotiable design principles) and §4.2 (complexity is
@@ -23,8 +27,9 @@ worked example, not a spec you have to reverse-engineer from existing code.
 
 ## Rubric changes
 
-Any change to the 5/7-Rs logic (§5.3), the Well-Architected normalization (§5.4), or the
-cost model (§5.6) needs:
+Any change to the 5/7-Rs logic (§5.3), the Well-Architected normalization (§5.4), the SDLC
+maturity dimensions (§5.5), the cost model (§5.6), or the technical debt delta model (§5.8)
+needs:
 1. The reasoning stated in plain language in the PR description — why this evidence should
    move the score, not just that it does.
 2. A new eval fixture (§7) that would have caught the old behavior as wrong, if one doesn't
