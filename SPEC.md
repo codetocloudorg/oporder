@@ -1012,6 +1012,50 @@ actually is:
   whose whole pitch is transparency doesn't get an exception from being usable by everyone
   who visits it.
 
+### 9.1 Discoverable and shareable — not left as an afterthought
+
+Raised earlier in this project's history and never actually written down until now:
+
+- **Real Open Graph and Twitter Card meta tags** on every page — title, description, and a
+  purpose-built social image, not whatever the page happens to render into a screenshot.
+  Pulled from the same source of truth as the GitHub repo description, so the pitch is
+  identical everywhere it's seen, not reworded per surface.
+- **`robots.txt` that allows everything and points to a sitemap** — this is a site that wants
+  to be found and indexed, the opposite problem from the Disallow-plus-noindex contradiction
+  that shows up everywhere else in SEO work. No page on this site should ever carry a
+  `noindex` tag.
+- **`llms.txt`**, already committed to in §4.3, lives here — the site's own pitch has to be
+  legible to an agent evaluating whether to recommend OpOrder, not just to a search crawler.
+- **A real reviews/mentions section**, distinct from the "what it found" wall above — actual
+  GitHub stars, actual third-party writeups, once either exists. Left visibly empty rather
+  than filled with placeholder praise until something real is there to put in it.
+
+### 9.2 Logo and mascot
+
+A project this design-conscious about everything else (§6's whole "gold standard" bar) needs
+a real visual identity, not a default GitHub avatar. Proposal, stated plainly rather than
+just asserted:
+
+**A raccoon.** The fit isn't decorative — it's the literal shape of §14's own strongest
+finding. A raccoon's whole reputation is finding real value in what everyone else has written
+off as trash — which is exactly what §5.0's orphan-resource list does, and exactly what
+Journey 1 in §14 found as its headline result: forgotten cloud resources still quietly
+billing, discovered by looking somewhere nobody else bothered to check. "Trash panda finds the
+money nobody knew was still leaking" is a mascot with a real reason to exist, not an
+arbitrary animal picked for cuteness.
+
+**Worth knowing before committing to it, found by actually checking rather than assuming a
+blank slate**: MINIX 3 already has an established raccoon mascot, "Rocky Raccoon," chosen for
+almost identical reasons — agility, intelligence, and cleaning up complex systems efficiently.
+Ubuntu also used "Resolute Raccoon" as one release codename. Neither blocks this — mascot
+animals aren't exclusive the way product names are, and plenty of unrelated projects share a
+species — but it's the honest picture, not an assumption that nobody's thought of this before.
+
+**Scope, matching the discipline already applied everywhere else in this document**: a logo
+and mascot are worth having before this website actually launches, not worth commissioning
+before there's a working v0.1 to put a face on. Design direction recorded now; execution
+timed to the roadmap below, not ahead of it.
+
 ---
 
 ## 10. Roadmap
