@@ -65,6 +65,15 @@ panic never dumps process environment or config contents into a stack trace. A l
 is a smaller blast radius than a leaked cloud credential, but it's still real money and real
 access, and gets the same discipline, not a lesser one because it's newer.
 
+**Development against a real account never puts that account's identity in the public
+repo.** No subscription/account name, subscription/account ID, tenant name or ID, or resource
+name from a real cloud account ever appears in a commit message, code comment, test fixture,
+or issue — those get passed as runtime arguments or environment variables, exactly like a
+credential, never hardcoded or written into anything version-controlled. This project develops
+against real accounts (§7's live-credential integration path exists specifically because
+mocked fixtures alone eventually drift from reality) — the account's existence is fine to
+mention in the abstract; anything that identifies it is not.
+
 ### 2. Prompt injection is the real, open threat for this category of tool — not a hypothetical
 
 OpOrder reads two kinds of content it does not control: arbitrary source code in the
