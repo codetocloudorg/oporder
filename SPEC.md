@@ -113,6 +113,7 @@ oporder-report/
 ├── waf-scorecard.json  # cross-provider Well-Architected pillar scores, machine-readable
 ├── sdlc-maturity.json  # branching/CI/test/release maturity signals feeding the effort estimate
 ├── debt-delta.json     # per-workload technical debt trajectory: mitigated / unchanged / at-risk of increasing (§5.8)
+├── security-baseline.json  # relevant OWASP Top 10:2025 / LLM / Agentic categories per recommended rebuild (§5.9)
 └── architecture.svg    # the live-state diagram, regenerable on every run
 ```
 
@@ -213,7 +214,14 @@ cloud it recommends:
 
 - **MCP (Model Context Protocol)** stays the integration surface once §4.2's "something real
   forces it" threshold is met — it's already cross-vendor (Anthropic, OpenAI, and Google all
-  support it), which is exactly why it's the right choice over a bespoke integration API.
+  support it), which is exactly why it's the right choice over a bespoke integration API. The
+  concrete target list, stated now rather than left implicit: **Claude Code, opencode, Codex,
+  and Grok's agentic tooling** — a user should get the same OpOrder findings and the same
+  live pricing/inventory data connecting through any of them, not a better experience in one
+  because that's the one the maintainers happened to use themselves. Naming these hosts
+  explicitly is itself the "something real" §4.2 requires before MCP is worth building —
+  it's a stated requirement now, not a hypothetical future one, which moves this decisively
+  off the speculative side of that threshold.
 - **AGENTS.md compatibility**: any coding agent reading a repo's `AGENTS.md` should be able to
   learn how to invoke `oporder` in that repo. A cheap addition with real reach, since
   AGENTS.md is a cross-vendor convention, not specific to any one agent product.
@@ -233,6 +241,12 @@ cloud it recommends:
 work with zero of them installed? If yes, add it. If a feature only works inside one vendor's
 agent host, it doesn't belong in this project — same discipline as refusing to favor one
 cloud, applied to the tooling ecosystem itself.
+
+**One consequence worth stating plainly**: whichever host someone connects through, they get
+the same live data — the MCP pricing and inventory servers query live (§5.6) on every call,
+never serve a cached snapshot to one integration and fresh data to another. "Connect from
+wherever you already work" only means something if it doesn't come with a second-class data
+tier attached.
 
 ### 4.4 Platform support matrix
 
@@ -407,6 +421,40 @@ technical debt unchanged — this migration does not address the missing test co
 three-year-out-of-support runtime."* The point is that a decision-maker can't say afterward
 that nobody told them a cheap option was also one that fixed nothing.
 
+### 5.9 Security baseline for rewrites and rebuilds
+
+Any workload scored Refactor, Rearchitect, or Repurchase (§5.3) means new code is about to be
+written — which is exactly the moment security debt gets fixed or, just as often, quietly
+introduced. This isn't optional context tacked onto the recommendation; it's checked against
+the current standards directly, every time:
+
+- **[OWASP Top 10:2025](https://owasp.org/Top10/2025/)** for the application code itself —
+  the freshly released edition, not the 2021 one still floating around most checklists.
+  Notably relevant to a modernization specifically: **Misconfiguration moved up to #2**, and
+  **Software Supply Chain Failures** replaced the old "vulnerable and outdated components"
+  category with a materially wider scope — both go directly to how a rebuild handles its
+  dependencies and its target-platform configuration, not just its own logic.
+- **[OWASP Top 10 for LLM Applications (2025)](https://genai.owasp.org/llm-top-10/)** —
+  Prompt Injection stays #1, with System Prompt Leakage and Vector/Embedding Weaknesses newly
+  added — checked whenever the rebuilt or refactored application itself integrates an LLM,
+  which is common enough in a 2026 rewrite to be a default check, not a special case.
+- **[OWASP Top 10 for Agentic Applications (2026)](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)**
+  — the newest of the three, published December 2025 specifically for systems that plan, use
+  tools, and act with reduced human oversight — checked when the target architecture includes
+  agentic components, since that's now a realistic modernization target, not a hypothetical.
+
+**Why this sits next to §5.8, not apart from it**: the debt-delta model's honest caution — that
+AI-assisted execution correlates with a real, measured rise in duplicated code and a real
+drop in refactoring (the GitClear findings already cited) — has a security-specific twin
+already in this vault's own Devil's Advocate research: Veracode's 2025 finding that **45% of
+AI-generated code samples introduced an OWASP Top 10 vulnerability**, with **security
+performance staying flat while functional correctness improved**. That flatness finding is
+the durable part, and it's the concrete reason a Refactor/Rearchitect recommendation that
+leans on heavy AI code generation gets an OWASP checklist attached automatically rather than
+left to the executing team's discretion. **Output**: `security-baseline.json` alongside the
+other scorecards (§3), listing which OWASP categories were checked, which are relevant to the
+recommended target, and which the execution plan needs to specifically account for.
+
 ---
 
 ## 6. CLI, TUI, and report design — the gold standard bar
@@ -513,7 +561,34 @@ clean), never decoration, and the report is fully legible in both light and dark
 and browsers — a tool this proud of showing its own reasoning doesn't get to be unreadable
 in half the environments it's opened in.
 
-### 6.4 😈 Devil's advocate: "beat the hyperscalers on output" is a claim, not evidence yet
+### 6.4 Accessibility — README, reports, and the website all meet a real standard, not a good-faith guess
+
+Every human-facing surface this project produces targets **WCAG 2.2 AA**, treated as a merge
+requirement for the HTML report and the website, not an eventual audit:
+
+- **Never color alone.** The debt trajectory indicator (§5.8), the WAF pillar scores (§5.4),
+  and the R recommendation itself (§6.2) always pair color with a symbol or a word — `↓
+  mitigated`, `→ unchanged`, `↑ at risk`, never a bare colored dot. A colorblind reader gets
+  the same information as anyone else, not a degraded version of it.
+- **Contrast ratios checked, not eyeballed**: 4.5:1 minimum for body text, 3:1 for large text
+  and meaningful UI elements, in both the light and dark palettes required by §6.3.
+- **Every chart in the HTML report ships a text-table equivalent** in the same document — a
+  screen reader, or a decision-maker who just wants the numbers, never has to parse an SVG to
+  get the finding.
+- **Semantic structure throughout**: real heading hierarchy in every Markdown and HTML output
+  (never a bold paragraph standing in for a heading), alt text on every generated diagram
+  describing what it shows, not just its filename.
+- **The TUI (§6.2) gets a `--plain` fallback** that emits the same information as a linear,
+  screen-reader-friendly text stream — an interactive terminal UI is not accessible by
+  default, and pretending otherwise would be the same kind of quiet gap this spec refuses to
+  leave unstated everywhere else.
+- **README, SPEC, CONTRIBUTING, SECURITY** — already plain Markdown with real heading
+  structure and no meaning conveyed by formatting alone, which clears most of WCAG's text
+  content requirements by construction. The discipline that actually needs enforcing is on
+  the *new* visual surfaces (§6.2, §6.3, §9's website) — that's where accessibility risk
+  actually gets introduced, not in the docs that were already plain text from day one.
+
+### 6.5 😈 Devil's advocate: "beat the hyperscalers on output" is a claim, not evidence yet
 
 Worth being honest about what hasn't actually been checked: this spec asserts OpOrder's
 output should look and read better than AWS Transform's, Copilot app modernization's, or
@@ -524,7 +599,7 @@ today, compared honestly against an early OpOrder report, not an assumption that
 tooling is automatically uglier. If it turns out one of them already clears this bar, say so
 in the open rather than quietly drop the comparison.
 
-### 6.5 What "real value like Alberta" means for report writing specifically
+### 6.6 What "real value like Alberta" means for report writing specifically
 
 Alberta's own output wasn't impressive because of formatting — it was impressive because
 every claim traced to an exact file and line number, across 466 million lines, with nothing
@@ -591,6 +666,9 @@ tabs:
   copy.
 - Footer: license, GitHub link, Code To Cloud attribution, nothing else competing for
   attention.
+- **Meets WCAG 2.2 AA per §6.4** — same standard as the HTML report, same reasoning: a site
+  whose whole pitch is transparency doesn't get an exception from being usable by everyone
+  who visits it.
 
 ---
 
