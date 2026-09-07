@@ -42,6 +42,7 @@ differentiator, and neither is one you can quietly abandon under commercial pres
 | **A contributor should be able to submit a real PR after reading one file.** Architectural elegance that requires understanding four subsystems before anyone can help is a tax on exactly the community growth this project depends on. | No feature ships behind more indirection than it currently needs. See §4.2 — the fancier architecture is *earned*, not assumed from day one. |
 | **Vendor-neutrality applies to the tooling ecosystem too, not just the cloud.** The plain CLI has to work with zero AI agent host installed. | No feature that only works inside one vendor's agent product (Claude Code, Cursor, etc.) is allowed to become load-bearing. See §4.3. |
 | **Every recommendation shows pros and cons, never a bare verdict — and every surface looks considered, not default-tool ugly.** | No CLI output, TUI view, or report ships that only shows the "why we're right" side of a call, or that reads like an afternoon's unstyled output. See §6. |
+| **A stated platform preference adds a lens, it never replaces the analysis.** Helping someone who's already decided is legitimate; quietly bending the evidence to flatter that decision isn't. | No `--prefer` flag is allowed to suppress or soften the neutral recommendation sitting right next to it. See §3.2. |
 
 ---
 
@@ -136,6 +137,18 @@ retire · retain** (the 7 Rs — see §5.3), with:
   no equivalent on the target platform → refactor, not rehost").
 - A stated confidence level, not false precision.
 - What would have to change for the call to flip (the anchor a human can push back against).
+
+**Stating a platform preference (`oporder scan . --prefer aws`) adds a lens, it never
+replaces the analysis.** Neutrality doesn't mean refusing to help someone who's already
+decided — plenty of preferences are legitimate and have nothing to do with which platform
+scores best on paper: existing team skill, an existing enterprise agreement, a board mandate,
+a compliance requirement that predates this scan. With a preference stated, MISSION.md shows
+**both**, clearly separated: the neutral recommendation (unchanged, never suppressed), and a
+*"proceeding with AWS per your stated preference"* plan with its own pros and cons. If the two
+disagree, the report says so plainly — *"Note: our neutral analysis found GCP ~23% cheaper for
+this workload; here's the honest plan if you're proceeding with AWS anyway"* — rather than
+quietly steering the preferred-platform plan to look better than the evidence supports. A
+preference changes what gets planned for. It never changes what gets found.
 
 ### 3.3 EXECUTION — what it costs, in both directions
 
@@ -276,9 +289,77 @@ tier attached.
 | Azure | AKS, Container Apps | Azure Functions | Azure Retail Prices API — `https://prices.azure.com/api/retail/prices` (confirmed live) | |
 | Cloudflare | Workers (+ Containers, verify current GA status at build time) | Workers | **No public pricing API as of this writing** — needs a maintained scrape/manual-update path, flagged honestly in §12 | Real migration path already documented by Cloudflare: DNS → R2 → D1 → Workers. R2's zero egress fee is a first-class input to the cost model, not a footnote — it can flip a recommendation on its own for egress-heavy workloads. |
 
+### 4.6 LLM provider architecture — bring your own key, no default vendor
+
+The whole tool runs on LLM calls — §5.7's verifiers, the narrative sections of every
+report — and until this pass, nothing in this document said how OpOrder actually talks to
+one. That's not a missing implementation detail, it's a missing decision, and the decision
+has direct bearing on §1's own neutrality principle: **a tool built on "vendor-neutral" as
+its core claim cannot hard-require one AI vendor's API to function at all.** Shipping with a
+bundled key, or defaulting silently to one provider, would be the same quiet bias this spec
+refuses to accept anywhere else in the architecture.
+
+The fix follows real, working precedent rather than inventing a new shape: **opencode's
+provider architecture** — a pluggable abstraction over an OpenAI-compatible API surface,
+supporting 75+ providers including local models, with credentials stored locally and the
+user choosing (and paying for) their own model. OpOrder adopts the same pattern:
+
+- `oporder auth <provider>` stores a key locally (e.g. `~/.config/oporder/auth.json`),
+  never transmitted anywhere but the provider it's for.
+- Any OpenAI-compatible endpoint works out of the box — Anthropic, OpenAI, a self-hosted
+  local model via Ollama, an internal inference gateway — OpOrder doesn't know or care which,
+  by design.
+- **No default model ships.** The first run without a configured provider fails with an
+  actionable error explaining exactly how to set one up — matching §13.1's "actionable
+  errors, not opaque codes" standard — rather than silently falling back to a vendor the
+  project happens to prefer.
+- The token-cost transparency already required by §3.3 is provider-agnostic by construction:
+  whatever the user's configured provider bills, that's the number shown, in the currency and
+  at the rate that provider actually charges — no OpOrder markup, ever.
+
 ---
 
 ## 5. The assessment engine
+
+### 5.0 Workload identification and correlation — the join nobody had designed yet
+
+Every section below assumes two things are already known: what counts as one workload in
+the code, and which live cloud resources belong to it. **Neither was actually designed
+before this pass** — the spec jumped straight from "we analyze code" (§5.1) and "we scan
+infra" (§5.2) to a combined report, as if the join between them were trivial. It isn't, and
+it's arguably the single hardest unsolved problem in this whole system. This runs as its own
+phase, after §5.1/§5.2 gather raw signal and before §5.3's rubric scores anything — nothing
+downstream can attach a recommendation, a cost, or a debt trajectory to a workload that isn't
+resolved yet.
+
+**Workload boundary detection**, most confident signal first:
+1. An explicit deploy manifest — a `Dockerfile`, a `serverless.yml`/SAM template, a Terraform
+   module boundary, a CI/CD job that deploys a specific directory — one workload per manifest,
+   high confidence.
+2. No manifest, but a clear module boundary (`go.mod`, `package.json`, `pyproject.toml`) with
+   its own entry point — medium confidence.
+3. Ambiguous — **flagged as "unclassified code, needs manual review" in SITUATION.md, never
+   silently assigned to a guessed boundary.** A wrong boundary here corrupts every downstream
+   score, so this is exactly the kind of uncertainty §5.3 already insists gets stated rather
+   than hidden behind a confident-sounding answer.
+
+**Code↔infrastructure correlation** — the same problem driftctl already solves for drift
+detection, applied here for assessment instead:
+1. **IaC state as ground truth.** Terraform state, CloudFormation stack resources, CDK
+   synthesized output, Pulumi state — where these exist, they *are* the authoritative link,
+   the same principle driftctl (already cited in §2's competitive research) uses to compare
+   state against live reality rather than guessing.
+2. **Resource tags** — `service:`, `app:`, `team:` tags, when consistently applied, are the
+   next-best signal. driftctl's own practice is instructive here too: an untagged resource is
+   "the canary" — finding one reveals a gap in the org's own tagging discipline, which is a
+   real, useful finding to surface in SITUATION.md, not just missing plumbing to apologize for.
+3. **Name-matching heuristics** — lowest confidence, fuzzy-matching resource names or ARNs
+   against repo/module names. Always shown with a stated confidence score. Never presented as
+   equivalent to tiers 1 or 2.
+4. **Unmatched resources on either side get their own explicit list**, not silently dropped:
+   *"12 cloud resources found with no matching code, 3 code modules found with no matching
+   infra."* This orphan list is itself real signal — shadow IT, abandoned infrastructure, and
+   the clearest possible Retire candidates all show up here first.
 
 ### 5.1 Code analysis layer
 
@@ -891,6 +972,58 @@ exists:
 Each of these gets built the moment its trigger fires, not on a calendar date and not "from
 commit one" — matching the same "complexity is earned" discipline §4.2 already applies to
 the architecture, now actually applied to process too instead of just architecture.
+
+---
+
+## 14. Hypothetical user journeys — where the real value actually has to land
+
+No real users exist yet, so this is a proto-persona exercise, not data — treated with the
+same honesty as every other unvalidated claim in this document (§2.0's Alberta caveat, §12's
+effort-estimate coefficients). Its purpose is narrower and more useful than data would be
+right now: does the value described anywhere above survive being walked through end to end
+by someone with a real job to do, or does it evaporate the moment it meets a real scenario?
+
+**Kept intentionally to two — this section grew a third and a fourth persona in an earlier
+draft of this pass, and they got cut per §11's own scope-discipline finding: two that
+actually stress the fixes just made teach more than four that repeat the same lesson.**
+
+> [!note]- Journey 1 — mid-market SaaS CTO, no dedicated cloud architect on staff
+> **Situation**: eight-year-old AWS account, nobody fully knows what's still running, a board
+> asking why the AWS bill keeps climbing.
+> **Run**: `oporder scan .` against the account and the monorepo.
+> **Where the value actually lands**: not the 5/7-Rs table — the **orphan-resource list from
+> §5.0**. Twelve resources with no matching code, six of them still billing monthly. That's
+> not insight, it's found money, on the first run, before a single migration decision gets
+> made. The neutral cost comparison (§5.6) then gives the CTO something citable in a board
+> deck that isn't "trust me" — a number with a live-priced source attached.
+> **Where it could still fail them**: if §5.0's correlation confidence is low across most of
+> the account (plausible for an eight-year-old, undertagged estate), the report has to be
+> honest about that upfront rather than presenting a shaky map with false confidence — the
+> exact discipline §5.0 already requires, tested against a realistic worst case.
+
+> [!note]- Journey 2 — platform engineer at a scale-up, told to evaluate containerizing
+> **Situation**: leadership wants a container/serverless push (§4.5); the team already has
+> deep AWS operational experience and no appetite to also learn a new cloud right now.
+> **Run**: `oporder scan . --prefer aws`.
+> **Where the value actually lands**: **§3.2's preference lens.** Without it, this engineer
+> gets a neutral comparison that might recommend GCP on paper and is politically useless to
+> them — nobody's about to propose a cloud migration their team doesn't want, and a tool that
+> only offers that answer gets closed and never opened again. With it, they get a real,
+> pros-and-cons technical plan for the path they can actually ship, *and* the honest
+> disclosure of what it costs relative to the neutral pick — which is what lets them defend
+> the choice in a design review instead of hiding the tradeoff.
+> **Where it could still fail them**: if the preference lens quietly gets easier to read than
+> the neutral one — better formatting, more confident language — that's the same bias §1
+> already rules out, just smuggled in through tone instead of through the rubric. Worth
+> explicitly checking the rendered output for this, not just the underlying logic, once there
+> is one.
+
+**What both journeys actually confirm**: the value this tool provides isn't the recommendation
+table itself — it's evidence a decision-maker didn't have and couldn't easily get otherwise
+(orphan resources nobody was tracking, an honest cost picture for a path already chosen). The
+5/7-Rs call is the part every hyperscaler tool already does passably. The parts these journeys
+surfaced as load-bearing — §5.0's correlation and §3.2's preference lens — are exactly the two
+gaps this pass exists to have found and fixed, not incidental features.
 
 ---
 
