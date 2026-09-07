@@ -416,6 +416,14 @@ detection, applied here for assessment instead:
    infra."* This orphan list is itself real signal — shadow IT, abandoned infrastructure, and
    the clearest possible Retire candidates all show up here first.
 
+**Stated explicitly because it wasn't before**: all four tiers above are deterministic,
+computational parsing and pattern-matching — reading IaC state, reading tags, string
+similarity on names. **None of it requires an LLM call.** This is the same
+computational-vs-inferential split §7's testing strategy already applies, now named as a
+real cost decision, not just a testing category: correlating an entire codebase against an
+entire cloud account is free relative to the per-workload LLM analysis that follows it,
+because it's the one phase in this whole pipeline that's plain code.
+
 ### 5.1 Code analysis layer
 
 - Static dependency graph (tree-sitter–based, language-agnostic parsing — the approach
@@ -561,6 +569,20 @@ verified:
    (§5.5), and the specific R selected — expressed as a range with the assumptions shown,
    never a bare number. Ranges get audited against real completed engagements over time,
    the same way any estimating model has to earn trust.
+
+**Model-tier assignment — cited as precedent in §2.0, never actually specified for OpOrder
+itself until now.** Alberta's own architecture used Opus for judgment and Sonnet for volume;
+the same split applies here, stated as a real rule rather than left as an admired example:
+
+| Role | Tier | Why |
+|---|---|---|
+| Per-workload worker (§5.1–§5.6 findings) | Cheap/fast model | High volume — up to hundreds of parallel calls per scan; the work is extraction and classification against an explicit rubric, not open-ended judgment |
+| Fresh-context verifier (§5.7) | Cheap/fast model | Checking a specific claim against specific evidence is the same shape of task as producing it — doesn't need a stronger model than the one that made the claim |
+| Counter-case agent (§5.7a) | Strong model | Constructing the best adversarial argument for a different R is genuine judgment, and it only runs on the three highest-cost-of-being-wrong Rs by default (§5.7a) — the one place in this pipeline where paying for a stronger model on every invocation is actually justified |
+| Report synthesis | Strong model | One call per scan, not per workload — the cost of using the strongest available model here is negligible relative to what it's synthesizing |
+
+This is provider-agnostic per §4.6 — "cheap" and "strong" are relative to whatever the
+user's configured provider offers, not a hardcoded model name.
 
 ### 5.7 Verification discipline
 
@@ -784,6 +806,15 @@ Principles this enforces:
   `oporder cost` all work standalone against a previous scan's cache, not just as one
   monolithic run.
 
+**Cache invalidation, named as a gap earlier in this project's history and left unresolved
+until now.** The cache is keyed on two things, checked in order: the scanned repo's current
+git commit hash, and a live, cheap check of the cloud account's resource-count/last-modified
+metadata (not a full re-scan) against what the cache recorded. Either one changing invalidates
+the cache for that specific source — a new commit doesn't force a re-scan of unchanged cloud
+state, and vice versa. **Never silently serve stale data**: if the invalidation check itself
+fails (the account is unreachable, say), the CLI says so and asks whether to proceed on stale
+cache or abort, rather than guessing on the user's behalf which is worse.
+
 ### 6.2 The interactive TUI — `oporder browse`
 
 A one-shot terminal log is fine for a CI pipeline; it's the wrong surface for a human
@@ -927,10 +958,31 @@ AI-tool testing goes wrong:
    engineered to trigger every one of the 7 Rs, plus a "genuinely ambiguous, correct answer
    is 'insufficient evidence'" fixture — because a tool that can't admit uncertainty in tests
    won't admit it in production either.
+5. **A real CI pipeline, not tests that just sit in the repo.** GitHub Actions runs the full
+   deterministic suite plus the mocked-fixture eval suite on every PR, gating merge — a
+   contributor's change doesn't land on an "I ran it locally" promise. The live-credential
+   integration path (an actual scan against a real, dedicated sandbox account) runs on a
+   schedule, not per-PR, specifically to catch the failure mode mocking can't: a provider API
+   changing shape in a way the recorded fixtures never noticed, because nothing compared them
+   against reality since they were captured.
+6. **A scale fixture, not just correctness fixtures.** Every fixture above tests whether an
+   answer is right. None of them test what happens at Alberta's scale (§2.0) — thousands of
+   workloads, not a handful. At least one large synthetic fixture (generated, not hand-written)
+   exists specifically to catch the failure modes correctness testing can't: memory growth,
+   the §5.7's fan-in guard actually firing under a real partial failure, and whether §5.0's
+   correlation step stays fast enough to be worth calling "the free phase" once the codebase
+   it's correlating stops being small.
 
 ---
 
 ## 8. Documentation strategy
+
+> [!note] `docs/` on `main` is reserved for this section's content, and only this section's
+> content. The website (§9) originally served from `main`/`docs` via GitHub Pages, which
+> collided directly with this plan — anything dropped into `docs/` for documentation purposes
+> would have silently become part of the public site. Fixed by moving the website to its own
+> `gh-pages` branch; `docs/` on `main` is free for `docs/rubric.md` and `docs/architecture/`
+> with no ambiguity about what's published where.
 
 - `README.md` — the pitch (already written).
 - `SPEC.md` — this document, kept current as the source of truth, not a launch artifact that
@@ -1080,10 +1132,13 @@ Ubuntu also used "Resolute Raccoon" as one release codename. Neither blocks this
 animals aren't exclusive the way product names are, and plenty of unrelated projects share a
 species — but it's the honest picture, not an assumption that nobody's thought of this before.
 
-**Scope, matching the discipline already applied everywhere else in this document**: a logo
-and mascot are worth having before this website actually launches, not worth commissioning
-before there's a working v0.1 to put a face on. Design direction recorded now; execution
-timed to the roadmap below, not ahead of it.
+> [!success] Shipped, not just proposed
+> The site is live, and it already carries a simple geometric raccoon mark (hero and footer,
+> inline SVG, no image assets) — the design direction above wasn't just recorded, it went out
+> the door with the first real deploy. **What's still genuinely proposal-stage, not shipped**:
+> a proper commissioned illustration beyond the current placeholder-quality geometric shape,
+> and any merchandise/community-identity use — those stay timed to the roadmap, not rushed
+> ahead of a working v0.1, same discipline as everything else in this document.
 
 ---
 

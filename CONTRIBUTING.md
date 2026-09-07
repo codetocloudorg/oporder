@@ -50,8 +50,26 @@ note on this being expected, not a failure state.
 
 ## Code style
 
-Standard `gofmt`/`go vet` clean. No framework beyond the Go standard library and the minimum
-needed for provider SDKs and MCP — see SPEC.md §1 on avoiding unearned complexity.
+Standard `gofmt`/`go vet` clean, plus `staticcheck` — no framework beyond the Go standard
+library and the minimum needed for provider SDKs and MCP — see SPEC.md §1 on avoiding
+unearned complexity. Held to the [Google Go Style
+Guide](https://google.github.io/styleguide/go/) on top of `gofmt`, since `gofmt` settles
+formatting but not naming, package structure, or error-handling conventions, and this project
+would rather adopt a real, widely-reviewed standard than invent its own.
+
+**Every exported function, type, and package has a doc comment** — Go's own convention,
+enforced by `staticcheck`, not optional. Comments explain *why*, not *what* — the same
+standard this document has held itself to throughout: a comment restating what the code
+already says is dead weight; a comment explaining a non-obvious constraint or a workaround is
+what actually helps the next person, including future-you.
+
+**Repository layout** follows the [Standard Go Project
+Layout](https://github.com/golang-standards/project-layout) — `cmd/` for the binary entry
+point, `internal/` for code not meant to be imported by other projects, `pkg/` only if
+something is genuinely meant to be reused externally. Not a Google or Apple internal
+convention specifically — there isn't one publicly documented for Go — but the closest thing
+the Go community has to a load-bearing consensus, which is the more honest bar to cite than
+naming a company that doesn't actually publish a Go layout standard.
 
 ## License
 
