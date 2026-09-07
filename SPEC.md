@@ -103,6 +103,7 @@ oporder-report/
 ├── EXECUTION.md        # cost estimate, effort estimate, sequencing, target service mapping
 ├── waf-scorecard.json  # cross-provider Well-Architected pillar scores, machine-readable
 ├── sdlc-maturity.json  # branching/CI/test/release maturity signals feeding the effort estimate
+├── debt-delta.json     # per-workload technical debt trajectory: mitigated / unchanged / at-risk of increasing (§5.8)
 └── architecture.svg    # the live-state diagram, regenerable on every run
 ```
 
@@ -330,6 +331,56 @@ matching the pattern already validated in this vault's Graph Engineering work: i
 correct, is it current, is the source real. A finding that fails majority verification is
 dropped, not softened.
 
+### 5.8 Technical debt delta — mitigated or introduced
+
+Cost and effort (§5.6) answer "what does this take." They don't answer the question that
+actually determines whether the work was worth doing: **does the debt this organization is
+carrying go down, stay flat, or go up as a result?** A rehost that just relocates an
+unmaintained mess to a new address, or a rushed rewrite that trades known problems for
+unfamiliar ones, can pass every cost and timeline check in this spec and still be a bad
+decision. This has to be scored explicitly, not left implicit in the R recommendation.
+
+**Baseline debt fingerprint** (current state, measurable directly from §5.1/§5.5 signals):
+- Cyclomatic complexity and duplication (`jscpd`-style detection — the same mechanism this
+  project's own research already trusts more than vendor debt-quantification claims: see
+  the Code To Cloud vault's Devil's Advocate note on testing GitClear's duplication claim
+  on your own repo rather than trusting either side of that argument).
+- Dependency staleness and EOL exposure — how much of the debt is "the framework version
+  itself is the risk," which several Rs (rehost, replatform) leave completely untouched.
+- Test coverage and SDLC maturity (§5.5) — debt that isn't covered by tests is debt nobody
+  can safely touch, which is itself a compounding risk independent of the code's age.
+
+**Projected debt trajectory** (per candidate R, shown alongside the recommendation in
+MISSION.md):
+
+| R | Typical debt trajectory | Why |
+|---|---|---|
+| Retain | Unchanged | By definition — nothing moves |
+| Rehost | **Usually unchanged, sometimes worse** | Lift-and-shift relocates the codebase without touching it; report this plainly rather than let "we migrated" imply "we fixed something" |
+| Replatform | Modest reduction | Swapping to a managed service typically removes the operational debt of self-managing that piece, without touching application-level debt |
+| Refactor / Rearchitect | **Reduction if executed well, real risk of increase if rushed** | The widest variance of any R — see the caution below |
+| Repurchase | Reduction | Retiring in-house code for a maintained product removes that code's debt entirely, at the cost of new integration debt — both sides get shown |
+| Retire | Full elimination | The only R that's unambiguous |
+
+> [!warning] The "introduced" side is a projection, not a measurement, and the report says so.
+> Baseline debt is measurable today. Debt introduced by a rewrite that doesn't exist yet is
+> an estimate conditioned on execution quality, team familiarity with the target stack, and
+> timeline pressure — none of which OpOrder can observe in advance. Where a client is using
+> AI-assisted tooling to execute a Refactor/Rearchitect, GitClear's own findings (already
+> cited in this vault's Devil's Advocate note) are directly relevant and get surfaced in the
+> report as context, not as a prediction: duplicated code blocks rose roughly 8× in frequency
+> industry-wide as AI-generated code volume grew, and "moved lines" (their refactoring proxy)
+> fell from ~25% to under 10% of changed lines over the same period. That's a mechanism, not
+> a guarantee — it's a reason to weight the "introduced debt" side of a Refactor/Rearchitect
+> call more heavily when the execution plan leans on heavy AI code generation with light
+> review, and to say exactly that in the output rather than a bare confidence number.
+
+**Output**: a `debt-delta.json` alongside `waf-scorecard.json` and `sdlc-maturity.json`
+(§3), plus one line per workload in MISSION.md — e.g. *"Rehost: cost $X, effort Y weeks,
+technical debt unchanged — this migration does not address the missing test coverage or the
+three-year-out-of-support runtime."* The point is that a decision-maker can't say afterward
+that nobody told them a cheap option was also one that fixed nothing.
+
 ---
 
 ## 6. CLI UX — the gold standard bar
@@ -435,7 +486,7 @@ tabs:
 | Phase | Scope | Architecture | Exit criteria |
 |---|---|---|---|
 | v0.1 | AWS only. Live inventory + diagram + plain-English SITUATION.md. No Mission/Execution yet. | Plain Go CLI, direct AWS SDK calls — no MCP/skill/workflow split (§4.2) | A stranger can run it against a real AWS account and trust the diagram, and a Go developer can read `main.go` end to end |
-| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. | Same plain CLI | The rubric survives a public read-through without an obvious hole |
+| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) ships alongside it — a recommendation with no debt trajectory attached is an incomplete recommendation. | Same plain CLI | The rubric survives a public read-through without an obvious hole, and no MISSION.md entry ships without a debt-delta line |
 | v0.3 | EXECUTION.md — live AWS cost + effort estimate. Eval suite live in CI. | Same plain CLI | A real cost estimate gets checked against a real completed migration, error margin published |
 | v0.4 | GCP + Azure providers added. WAF cross-provider normalization live. | Provider clients still direct, one package per provider — decompose into MCP only if a concrete second agent-host integration need shows up (§4.2) | Same workload, three clouds, one honest comparison |
 | v0.5 | Cloudflare added, with the pricing-data maintenance plan from §12 actually running. | | |
@@ -482,6 +533,13 @@ tabs:
 ---
 
 ## 12. Gap analysis — open risks not fully resolved above
+
+> [!warning] The debt-delta model (§5.8) has no validated coefficients, same as the effort estimate.
+> "Reduction if executed well, real risk of increase if rushed" for Refactor/Rearchitect is
+> directionally right and numerically unproven. Like §5.6's effort estimate, this starts as a
+> stated hypothesis and needs to be audited against real completed engagements — track
+> predicted vs. actual debt trajectory (via a follow-up scan some months post-migration) from
+> the first pilot user onward, not as a someday nice-to-have.
 
 > [!warning] Cloudflare has no public pricing API.
 > Every other provider in §4.5 has a live, queryable pricing source. Cloudflare doesn't.
