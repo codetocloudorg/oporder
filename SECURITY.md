@@ -84,10 +84,11 @@ out (the LLM call, and anything downstream that trusts its output).
 
 ### 3. Supply chain
 
-Every release ships with an SBOM and works toward SLSA provenance (SPEC.md §13.2). Until that
-pipeline exists, verify a release's checksum against the GitHub release page before running
-an unfamiliar binary, the same caution you'd apply to any infrastructure tool that touches
-live cloud credentials.
+SBOM generation and SLSA provenance are planned, triggered by the first tagged binary release
+(SPEC.md §13.2) — not built yet, because there's nothing to attest to the provenance of
+before then. Until that pipeline exists, verify a release's checksum against the GitHub
+release page before running an unfamiliar binary, the same caution you'd apply to any
+infrastructure tool that touches live cloud credentials.
 
 ### 4. MCP servers are the narrowest possible surface, on purpose
 

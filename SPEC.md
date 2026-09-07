@@ -148,6 +148,13 @@ retire · retain** (the 7 Rs — see §5.3), with:
 - **Sequencing**: which workloads block which, surfaced from the dependency graph, not
   guessed.
 
+**A plain disclaimer belongs in the output itself, not just Apache 2.0's warranty
+boilerplate that nobody actually reads.** Every EXECUTION.md carries one line, unhedged:
+*this is a rigorous estimate, not a commitment — verify independently before a real budget
+decision is made against it.* Legally, Apache 2.0 already covers this; the gap this pass
+found is that legal coverage and a decision-maker actually being informed are two different
+things, and only one of them was previously addressed.
+
 ---
 
 ## 4. System architecture
@@ -218,10 +225,13 @@ cloud it recommends:
   concrete target list, stated now rather than left implicit: **Claude Code, opencode, Codex,
   and Grok's agentic tooling** — a user should get the same OpOrder findings and the same
   live pricing/inventory data connecting through any of them, not a better experience in one
-  because that's the one the maintainers happened to use themselves. Naming these hosts
-  explicitly is itself the "something real" §4.2 requires before MCP is worth building —
-  it's a stated requirement now, not a hypothetical future one, which moves this decisively
-  off the speculative side of that threshold.
+  because that's the one the maintainers happened to use themselves. Naming this list is a
+  **stated future requirement, not a trigger that's already fired** — §4.2's threshold is
+  "something real forces it," and a named intent isn't the same as an actual second host
+  someone is actually trying to use OpOrder from today. The roadmap (§10) still gates the
+  MCP/skill/workflow split to v0.4 at the earliest, and this list exists so that whenever the
+  trigger does fire, it's clear which hosts the design already promised to support — not to
+  quietly pull the timeline forward by restating the requirement more confidently.
 - **AGENTS.md compatibility**: any coding agent reading a repo's `AGENTS.md` should be able to
   learn how to invoke `oporder` in that repo. A cheap addition with real reach, since
   AGENTS.md is a cross-vendor convention, not specific to any one agent product.
@@ -311,14 +321,47 @@ unstated priors. Where evidence is ambiguous, the report says so explicitly rath
 picking a confident-sounding answer — a stated "insufficient evidence, here's what would
 resolve it" beats a wrong confident one.
 
+**These triggers are not mutually exclusive, and a real workload will often match more than
+one at once** — a service with no compliance driver (Retain's trigger) that's also cleanly
+containerizable (Rehost's trigger) is a completely normal, common case, not an edge case, and
+the table above has no built-in tie-break for it. The resolution order, most conservative
+first: **Retain wins over any migration path unless a specific forcing driver is present**
+(EOL, compliance, cost, or an explicit stated goal like the container/serverless targets in
+§4.5) — because recommending action with no forcing reason contradicts §1's own principle
+that "retain" has to be a real, equally-weighted outcome, not the default nobody reaches
+because a flashier R also technically qualified. Below Retain, ties resolve toward the
+**lowest-effort R that still satisfies every matched trigger** — Rehost before Replatform
+before Refactor before Rearchitect — on the grounds that the burden of proof rises with the
+scope of change being recommended, not the other way around. Every tie-break applied is shown
+in MISSION.md alongside the call, same as every other piece of reasoning in this spec — a
+silent tie-break is exactly the "opaque model call standing in for a documented rubric" §1
+already rules out.
+
 ### 5.4 Well-Architected scoring, normalized across providers
 
 AWS, Azure, and GCP each publish their own well-architected framework, with different pillar
-names and counts. OpOrder maps all three onto one canonical rubric (Security, Reliability,
-Performance, Cost, Operations, Sustainability) so a cross-cloud comparison is actually
-apples-to-apples — this normalization step is real, non-trivial work and is called out
-explicitly in the Gap Analysis (§12) as a place the mapping will need active maintenance as
-providers update their own frameworks.
+names and counts. **This mapping is real, unsolved design work, not a settled fact — the
+canonical six-pillar list previously asserted here was stated with more confidence than the
+work behind it justified.** A first-draft sketch, so the actual difficulty is visible instead
+of implied away:
+
+| Canonical pillar | AWS (6 pillars) | Azure (5 pillars) | GCP |
+|---|---|---|---|
+| Security | Security | Security | Security, Privacy, Compliance |
+| Reliability | Reliability | Reliability | Reliability |
+| Performance | Performance Efficiency | Performance Efficiency | Performance Optimization |
+| Cost | Cost Optimization | Cost Optimization | Cost Optimization |
+| Operations | Operational Excellence | Operational Excellence | Operational Excellence |
+| Sustainability | Sustainability | **No dedicated pillar** — treated as cross-cutting guidance, not a scored pillar | **No dedicated pillar** — same gap |
+
+**The row that actually matters**: Sustainability has real, scoreable AWS guidance and no
+equivalent first-class pillar on Azure or GCP. A canonical rubric that includes it either
+scores Azure/GCP workloads against criteria those providers never asked to be measured on
+(defensible, since the point is a neutral rubric, not each vendor's own scorecard — but has
+to be *stated* as a deliberate choice, not silently glossed over) or drops the row for
+cross-provider comparisons and keeps it AWS-only, which then isn't actually a canonical
+six-pillar rubric at all. **This decision is unmade as of this document** and needs resolving
+before §5.4 ships in v0.4, not discovered mid-implementation.
 
 ### 5.5 SDLC maturity scoring
 
@@ -352,6 +395,18 @@ no good reason.
   live and queryable without a sales call.
 - Cloudflare — no equivalent public API exists today; see §12 for the honest maintenance
   plan this requires.
+- **Region and currency were unaddressed until this pass.** All three confirmed APIs return
+  region-specific, source-currency pricing (typically USD). A cross-provider comparison has to
+  state explicitly which region is being priced — the workload's current region by default,
+  never silently defaulted to `us-east-1` — and the report shows the source currency plainly
+  rather than silently converting it, since a converted figure using a stale exchange rate is
+  its own quiet source of false precision. For a Canadian-based first user base specifically,
+  this isn't a hypothetical edge case — it's the first thing a real comparison needs right.
+
+**Currency conversion, if it happens at all, is opt-in and dated.** OpOrder is not a FX data
+provider — a converted number carries a visible "as of [date], at [rate]" tag, or the report
+simply shows source-currency numbers side by side and lets the reader do the comparison
+themselves. Silent conversion is worse than no conversion.
 
 **Cost of doing the work** — two numbers, both shown, both distrusted by default until
 verified:
@@ -469,7 +524,8 @@ looks like an afternoon's `fmt.Println` work.
 ### 6.1 The scan command
 
 A developer opens this tool for a five-minute look and it's still the thing they reach for a
-year later. Concretely:
+year later. Concretely (illustrative — no run has actually produced these numbers yet, and
+this example gets replaced with a real captured session the first time one exists):
 
 ```
 $ oporder scan .
@@ -621,10 +677,15 @@ AI-tool testing goes wrong:
    these to be anything less than rigorous — none of this is non-deterministic.
 2. **LLM-mediated reasoning** (the verifier agents, the narrative sections of the report):
    an **eval suite**, not unit tests — a fixed set of real-world-shaped fixture repositories
-   and mock cloud states with a known-correct answer, run against every model/prompt change,
-   scored for drift. This is the same discipline the vault's own Agentic Engineering learning
-   path already prescribes ("write 20 eval cases for an LLM-shaped feature") — applied to our
-   own product, not just recommended to others.
+   and mock cloud states with a **known-correct answer decided by a human before the fixture
+   is committed**, not inferred afterward. This detail matters and was missing until this
+   pass: an eval fixture whose "correct answer" is itself generated or judged by an LLM is the
+   same worker-grades-its-own-homework problem §1 and §5.7 already forbid for the product
+   itself, just relocated into the test suite where it's easier to miss. Grading against the
+   fixed, human-authored answer can be automated; *deciding* that answer never is. This is the
+   same discipline the vault's own Agentic Engineering learning path already prescribes
+   ("write 20 eval cases for an LLM-shaped feature") — applied to our own product, not just
+   recommended to others.
 3. **Provider API mocking**: every MCP server ships a recorded-fixture mode so the full test
    suite runs with zero live cloud credentials and zero cost — a contributor should be able
    to `make test` on a plane.
@@ -676,8 +737,8 @@ tabs:
 
 | Phase | Scope | Architecture | Exit criteria |
 |---|---|---|---|
-| v0.1 | AWS only. Live inventory + diagram + plain-English SITUATION.md. No Mission/Execution yet. | Plain Go CLI, direct AWS SDK calls — no MCP/skill/workflow split (§4.2) | A stranger can run it against a real AWS account and trust the diagram, and a Go developer can read `main.go` end to end |
-| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) ships alongside it — a recommendation with no debt trajectory attached is an incomplete recommendation. `oporder browse` TUI (§6.2) lands here too — the first release with real recommendations to browse is the first release that needs a browsing surface. | Same plain CLI + Bubble Tea/Lip Gloss for the TUI (a display dependency, not an architectural one — doesn't conflict with §4.2) | The rubric survives a public read-through without an obvious hole, no MISSION.md entry ships without a debt-delta line, and every entry shows pros and cons in both the Markdown and the TUI |
+| v0.1 | AWS only. Live inventory + diagram + plain-English SITUATION.md. No Mission/Execution yet. | Plain Go CLI, direct AWS SDK calls — no MCP/skill/workflow split (§4.2) | **Measurable, not a vibe**: at least 3 external users (outside Code To Cloud) run it against a real AWS account and confirm the generated diagram matches their own manual understanding of the account, in writing (an issue comment is enough) — and a Go developer with no prior context on the project can read `main.go` end to end in one sitting |
+| v0.2 | 5/7-Rs MISSION.md, AWS only, rubric fully documented. Technical debt delta (§5.8) ships alongside it — a recommendation with no debt trajectory attached is an incomplete recommendation. `oporder browse` TUI (§6.2) lands here too — the first release with real recommendations to browse is the first release that needs a browsing surface. | Same plain CLI + Bubble Tea/Lip Gloss for the TUI (a display dependency, not an architectural one — doesn't conflict with §4.2) | **Measurable**: at least one external reviewer with no stake in the project reads §5.3's rubric and files a specific, actionable objection (not silence) — silence isn't evidence the rubric is solid, an actual objection that gets resolved is. No MISSION.md entry ships without a debt-delta line, and every entry shows pros and cons in both the Markdown and the TUI |
 | v0.3 | EXECUTION.md — live AWS cost + effort estimate. Eval suite live in CI. `oporder report --html` (§6.3) ships here, once there's a real cost comparison worth charting. | Same plain CLI | A real cost estimate gets checked against a real completed migration, error margin published; the HTML report renders correctly in light and dark, and the §6.4 hyperscaler-output comparison gets actually done, not just asserted |
 | v0.4 | GCP + Azure providers added. WAF cross-provider normalization live. | Provider clients still direct, one package per provider — decompose into MCP only if a concrete second agent-host integration need shows up (§4.2) | Same workload, three clouds, one honest comparison |
 | v0.5 | Cloudflare added, with the pricing-data maintenance plan from §12 actually running. | | |
@@ -720,6 +781,22 @@ tabs:
 > capacity. **The roadmap in §10 should be read as sequential and gated, not parallel** —
 > v0.2 doesn't start until v0.1 actually has real users, specifically so scope never outruns
 > the hours available to ship it.
+
+> [!danger] "This document diagnosed its own scope creep and then kept doing it anyway."
+> This is the most important finding of this pass, and it's about the spec's own behavior,
+> not a technical gap. Scope creep was named explicitly as the top risk to this project — and
+> in the sessions immediately after that diagnosis, this document grew a full OWASP triple-
+> standard check (§5.9), WCAG 2.2 AA across two surfaces (§6.4), four named agent-host
+> integrations (§4.3), a TUI, and an HTML report engine, none of which were cut back down
+> afterward. §10's roadmap table still *reads* disciplined, but the total v1.0 promise it's
+> gating toward has grown well past what's achievable at the pace this document has actually
+> been produced at, versus the pace code gets written at. **The fix, applied now, not just
+> acknowledged**: everything in §13 beyond SemVer and a changelog is cut back to "once there's
+> a second maintainer" (see the revised §13 below). The OWASP baseline (§5.9) and WCAG bar
+> (§6.4) stay as *destinations*, not v0.1–v0.3 requirements — nothing in the roadmap's early
+> phases blocks on either. If this document adds a new capability in a future session without
+> also naming what it's displacing or deferring in the same breath, that's the signal the
+> pattern repeated and needs stopping again.
 
 ---
 
@@ -784,62 +861,36 @@ tabs:
 The point of this whole project is putting the organization, the engineer, the developer —
 not a vendor with a stake in the outcome — in the driving seat, with a genuinely free choice
 about what's right for their own situation. That claim is worthless if the project itself is
-run casually. A tool asking to be trusted with someone's honest architectural second opinion
-has to hold itself to the engineering discipline it implicitly promises the industry it's
-critiquing.
+run casually. But per §11's fresh finding, this section was itself an instance of the scope
+creep it's supposed to guard against — building governance scaffolding for a contributor base
+and release history that don't exist yet, at the direct cost of the shipping time §4.2
+already argues has to be protected. Trimmed here to what a zero-contributor, zero-release
+project actually needs today; everything else has a stated trigger, not an assumed start date.
 
-### 13.1 Versioning
+### 13.1 What starts now
 
-- **The CLI follows Semantic Versioning.** A breaking change to any flag, output format, or
-  default behavior is a major version bump, full stop — no "minor version, but technically
-  breaking" exceptions.
-- **Every JSON output schema (`waf-scorecard.json`, `sdlc-maturity.json`, `debt-delta.json`)
-  is versioned independently of the CLI itself**, with a `schemaVersion` field in every file.
-  Downstream tooling — dashboards, CI gates, someone's own script — may parse these directly;
-  breaking that silently by coupling schema changes to CLI releases is exactly the kind of
-  quiet vendor-style behavior this project exists to be the alternative to.
-- **A deprecation is announced at least one minor version before it lands**, with the
-  replacement path stated in the deprecation warning itself, not just the changelog — the
-  same "write actionable errors, not opaque codes" standard the Code To Cloud vault's Agent
-  Design Patterns research already sets for LLM-facing tool output applies here to
-  human-facing CLI output too.
+- **SemVer, once there's a first tagged release.** Pre-v0.1, version numbers don't mean
+  anything yet and don't need to.
+- **A `CHANGELOG.md`, started with the first user-facing behavior**, in Keep a Changelog
+  format — cheap, immediate, and it's the one governance artifact that's actually useful with
+  a single maintainer and zero contributors, since it's for future-you as much as anyone else.
 
-### 13.2 Release practice
+### 13.2 What's explicitly deferred, and to what trigger
 
-- **`CHANGELOG.md`** in Keep a Changelog format, updated in the same PR as the change it
-  describes — never reconstructed from git log after the fact.
-- **Tagged releases with prebuilt binaries** on GitHub Releases for every platform in §4.4,
-  the same distribution shape already proven by Infracost, Steampipe, and driftctl.
-- **Reproducible builds and a generated SBOM per release**, with SLSA provenance as the
-  longer-term bar — this is not new territory for this practice; it's the direct application
-  of the Code To Cloud Agentic Engineering vault's own Supply Chain and Governance research
-  to its own output, rather than advice given to others and skipped for this project.
+Everything below was in the original draft of this section as a day-one requirement. None of
+it is wrong to eventually have — all of it is wrong to build before the thing it protects
+exists:
 
-### 13.3 Decision process for load-bearing changes
+| Deferred item | Real trigger to build it | Why it doesn't belong in v0.1–v0.3 |
+|---|---|---|
+| Independently versioned JSON schemas (`schemaVersion` fields) | The first external tool or dashboard actually parses OpOrder's output directly | Versioning a schema nobody consumes yet is protecting against a break that can't happen |
+| Reproducible builds, SBOM, SLSA provenance per release | The first tagged binary release users actually download and run | There's nothing to attest to the provenance of yet |
+| Written-proposal + multi-person review for rubric changes (§5.3/§5.4/§5.8) | **The second active maintainer** — a one-person project cannot have a second reviewer, so requiring one is process theater, not a safeguard | Solo review already happens by necessity; formalizing it before there's someone else to do it adds friction with no corresponding safety gain |
+| `CODE_OF_CONDUCT.md`, stated issue-response SLA | The first external contributor or the first issue filed by someone who isn't a maintainer | A code of conduct with no community yet to apply it to is a document nobody reads, not a protection |
 
-Not every PR needs process. A change to the 5/7-Rs rubric (§5.3), the WAF cross-provider
-mapping (§5.4), or the debt-delta model (§5.8) does, because these are the exact surfaces
-where a quiet, well-intentioned tweak could drift the tool toward a biased answer without
-anyone noticing for months:
-
-- Any such change ships as a short written proposal in the PR description — what evidence
-  changes, why, and what real-world case motivated it — not just a diff.
-- It ships with a new or updated eval fixture (§7) that would have caught the old behavior
-  as wrong, per the standard already set in `CONTRIBUTING.md`.
-- It's reviewed by more than one person before merge once the project has more than one
-  active maintainer — a rubric this load-bearing shouldn't have a single point of failure
-  for "is this still honest," any more than the tool itself should let one worker verify its
-  own finding (§5.7).
-
-### 13.4 Community standards
-
-- A `CODE_OF_CONDUCT.md` (Contributor Covenant) from the first public commit, not added
-  retroactively once there's a reason to need one.
-- Issues and PRs get a first response inside a stated window once the project has real usage
-  — an unattended-looking repo is the single fastest way to lose the exact trust this whole
-  project depends on, and this vault's own prior research already named maintainer bandwidth
-  as the top real risk to community projects; a stated response-time commitment is how that
-  risk gets managed rather than just acknowledged.
+Each of these gets built the moment its trigger fires, not on a calendar date and not "from
+commit one" — matching the same "complexity is earned" discipline §4.2 already applies to
+the architecture, now actually applied to process too instead of just architecture.
 
 ---
 
