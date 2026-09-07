@@ -961,19 +961,48 @@ tooling instead of code.
 
 ---
 
-## 9. Website — Omarchy-style
+## 9. Website
 
-A single, fast, dark-mode-first scrolling page, not a marketing site with a nav bar and six
-tabs:
-- Above the fold: the one-liner, the install command, nothing else.
-- A terminal-recording GIF/asciinema embed of an actual `oporder scan` run — the real UX
-  from §6, not a mockup.
+**Checked the real thing before writing this, not a vague memory of it** — omarchy.org, in
+detail. What actually makes it work, concretely: dark-first with vivid, saturated accent
+colors rather than a muted "professional" palette; real terminal recordings and real
+screenshots, never stock imagery or mockups; a confident, non-corporate voice that never
+hedges; testimonials in authentic social-media language, not marketing copy; and — the thing
+that actually separates it from a template — **one genuinely participatory moment**, pressing
+a key to flip through themes live on the page, that lets a visitor *experience* the product
+instead of just reading claims about it.
+
+**What gets adopted here, and what deliberately doesn't** — copying Omarchy's specific
+mechanics (theme-switching, its exact visual language) would be derivative, not distinctive,
+and undercuts the "this needs to be its own flavour" call made earlier in this project's own
+history. What transfers is the *underlying design discipline*, rebuilt around what OpOrder
+actually is:
+
+- **Dark-first, terminal-authentic, real content only.** Every screenshot on this site is a
+  real captured `oporder scan` run (§6.1) or a real `oporder browse` session (§6.2) — never a
+  mockup, never a stock photo of someone typing on a laptop.
+- **OpOrder's own participatory moment, not Omarchy's**: a live, embedded, sandboxed instance
+  of `oporder browse` (§6.2's TUI, rendered for the web) running against a real, pre-scanned
+  public repo — a visitor doesn't read about pros-and-cons recommendations, they arrow through
+  one themselves, on the page, before they've installed anything. That's the equivalent
+  centerpiece: not a gimmick borrowed from someone else's product, a real demo of this one.
+- **Confident, non-corporate copy, held to the same evidence standard as the rest of this
+  document** — no hedging, but also no claim the report can't back up. *"AWS Transform
+  recommends AWS. This doesn't recommend anything it profits from."* reads with exactly the
+  same energy as Omarchy's *"We can fix everything"*, earned the same way: it's true, stated
+  plainly, not softened into safe marketing language.
+- **Deliberately not adopted: sound design, background music.** Real, working polish on
+  Omarchy — and wrong for OpOrder specifically. §14's CTO and platform-engineer journeys are
+  both making a case to skeptical stakeholders; a devtool that plays music on load reads as
+  playful for a Linux desktop and as unserious for a tool asking to be trusted with a cloud
+  account. Personality without undermining the credibility the whole pitch depends on.
 - One scroll section per pillar of §1 (vendor-neutral, assess-don't-execute, open scoring,
   self-hosted, fresh-context verification) — each one a claim plus the mechanism that
   enforces it, not just an assertion.
 - A live-updating "what it found" wall of anonymized, opt-in example findings from real
-  community runs, once that data exists — social proof that's actually true, not testimonial
-  copy.
+  community runs, once that data exists — social proof that's actually true, the same
+  authentic-over-polished instinct behind Omarchy's real social-media testimonials, not
+  written-for-marketing copy.
 - Footer: license, GitHub link, Discord link, Code To Cloud attribution — the real, existing
   Code To Cloud community channel (`discord.gg/vwfwq2EpXJ`), not a project-specific server
   spun up and then left to go quiet. Nothing else competing for attention; Instagram/YouTube/
