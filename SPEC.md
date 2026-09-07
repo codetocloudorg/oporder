@@ -229,6 +229,17 @@ flowchart TB
 
 ### 4.1 Why this shape, not a monolith
 
+> [!success] Distribution names reserved, shipped ahead of the binary
+> `oporder` and `oporder-cli` are secured everywhere they needed to be before anyone else
+> could take them: the GitHub repo and org (`codetocloudorg/oporder`), the domain
+> (`oporder.dev`, live per §9), and now **`oporder` on npm** — published as `oporder@0.0.1`,
+> an honest placeholder whose `postinstall` states plainly that no binary exists yet rather
+> than pretending to install one. GitHub Releases stays the primary distribution path
+> described below; the npm package becomes a real installer wrapper (a `postinstall` that
+> fetches the right platform binary from GitHub Releases, the same pattern esbuild and swc
+> use) the moment a real binary exists to wrap, at which point this becomes a version bump,
+> not a new package.
+
 - **The CLI is the only thing users install.** A single Go binary, no runtime dependency,
   same reasoning Infracost, Steampipe, and driftctl already made — it's why they all cross-
   compile cleanly to Linux, macOS, and WSL2 with zero friction. We follow the same precedent
