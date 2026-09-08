@@ -242,26 +242,28 @@ flowchart TB
 
 ### 4.1 Why this shape, not a monolith
 
-> [!success] Distribution names reserved, shipped ahead of the binary
-> `oporder` and `oporder-cli` are secured everywhere they needed to be before anyone else
-> could take them: the GitHub repo and org (`codetocloudorg/oporder`), the domain
-> (`oporder.dev`, live per §9), **`oporder` on npm** — published as `oporder@0.0.1`, an
-> honest placeholder whose `postinstall` states plainly that no binary exists yet rather than
-> pretending to install one — and now **`codetocloudorg/homebrew-tap`** with an `oporder`
-> formula that `odie`s with a clear message and a link to the real reasoning engine
-> (`go run ./cmd/sample-report`) rather than silently failing or pretending to install
-> something that doesn't exist. GitHub Releases stays the primary distribution path described
-> below; both the npm package and the Homebrew formula become real installers the moment a
-> real tagged binary release exists to wrap, at which point each becomes a version bump, not
-> a new package or formula.
+> [!success] v0.1.0 shipped — real binaries, real installers, not a placeholder anymore
+> `codetocloudorg/oporder@v0.1.0` is tagged and released: six real, checksummed binaries
+> (linux/darwin/windows × amd64/arm64) built by `.goreleaser.yaml` via
+> `.github/workflows/release.yml`, which fires only on a `v*` tag push, never automatically.
+> **`oporder` on npm** now downloads and runs the real platform binary during `npm install -g
+> oporder` (macOS/Linux; Windows isn't wired up yet even though a Windows binary exists in the
+> release) — no dependency beyond Node's own built-in `fetch` and the system `tar`.
+> **`codetocloudorg/homebrew-tap`**'s `oporder` formula points at the real per-platform release
+> assets with real checksums, and `brew install oporder` installs a genuinely working binary.
+> Both were verified against the actual published artifacts, not assumed from reading the
+> config: a packed npm tarball installed globally and ran a real `oporder scan`; `brew audit`,
+> `brew install --force`, and `brew test` all passed against the real formula. GitHub Releases
+> is the primary distribution path; npm and Homebrew are real, verified alternatives for
+> anyone who'd rather use a package manager they already have.
 >
-> **The release pipeline itself is real and tested now, ahead of the first tag** —
-> `.goreleaser.yaml` builds `cmd/oporder` for linux/darwin/windows × amd64/arm64, verified via
-> a local `goreleaser release --snapshot --clean` run that produced six real, runnable
-> binaries with the version correctly injected via ldflags. `.github/workflows/release.yml`
-> fires the real thing on a `v*` tag push — and only on that, never automatically as a side
-> effect of merging to `main`. Cutting the first actual release is still a deliberate,
-> separate, human decision; what changed is that the mechanism is no longer hypothetical.
+> Two real bugs were caught by actually running the placeholder commands end to end, before
+> v0.1.0 existed to fix them properly: npm's package had no `bin` entry at all (`npm install
+> -g oporder` created no `oporder` command), and Homebrew's placeholder formula crashed
+> instead of showing its own error message (a fake tag broke version-inference on current
+> Homebrew, and even fixed, the same fake URL 404's during Homebrew's fetch step, which runs
+> before the formula's own error-handling code ever gets a chance to run). Neither would have
+> surfaced from reading the source — only from actually running the documented commands.
 
 - **The CLI is the only thing users install.** A single Go binary, no runtime dependency,
   same reasoning Infracost, Steampipe, and driftctl already made — it's why they all cross-
