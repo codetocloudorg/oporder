@@ -57,29 +57,45 @@ That runs the actual 5/7-Rs rubric and debt-delta engine against five illustrati
 workloads and prints real, computed JSON — the genuine reasoning, on fixture data. Requires
 [Go](https://go.dev/dl/) installed, nothing else.
 
-**Have a real AWS, Azure, or Cloudflare account?** `oporder scan` is real too — live,
-read-only inventory across whichever providers you configure:
+**`oporder scan` is real too, and needs no cloud account to be useful:**
+
+```
+go run ./cmd/oporder scan
+```
+
+Run from any repo, this detects workload boundaries in the code (one per `Dockerfile`, one
+per Go module's `cmd/*/main.go`, etc. — see [`docs/rubric.md`](docs/rubric.md) for the
+reasoning model these feed, and SPEC.md §5.0 for the detection rules themselves) and writes a
+real `SITUATION.md`, including a Mermaid diagram of what it found.
+
+**Add a real AWS, Azure, GCP, or Cloudflare account** and it also pulls live inventory and
+correlates it against the code — matched, unmatched-on-either-side, all shown, never guessed:
 
 ```
 export AWS_REGION=us-east-1                          # uses your existing AWS credentials
 export OPORDER_AZURE_SUBSCRIPTION_ID=<subscription>   # uses your existing `az login` session
+export OPORDER_GCP_PROJECT_ID=<project>               # uses Application Default Credentials
 echo "<cloudflare-token>" > ~/.cloudflare_token       # from dash.cloudflare.com/profile/api-tokens
 
 go run ./cmd/oporder scan
 ```
 
-Set at least one; skip the rest. It writes a real `SITUATION.md` from live data — no code
-analysis or correlation wired in yet (see SPEC.md §10 for what's built so far), just the
-honest inventory.
+Any subset works; skip what you don't have. On AWS specifically, a correlated workload with
+real CloudWatch utilization data also gets a genuine 5/7-Rs call, written to `MISSION.md` —
+the other three providers don't have utilization gathering wired in yet, so that part is
+AWS-only for now (see SPEC.md §10's M2 for what's left).
 
 ## Status
 
-Early. Building in public. No released binary yet — this repo currently holds real, tested
-engines (the rubric, the debt-delta model, read-only cloud connectors for AWS, Azure, and
-Cloudflare) and a CLI that doesn't wire them together end-to-end yet, not the finished tool.
-Follow along, open an issue if you want to help shape where it goes, or drop into [Code To
-Cloud's Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it through than write it
-up.
+Early. Building in public. No released binary yet, but `oporder scan` genuinely works end to
+end today: code workload-boundary detection, live read-only connectors for AWS, Azure, GCP,
+and Cloudflare, tag/name correlation between the two, and — AWS-only so far — a real 5/7-Rs
+call backed by live CloudWatch utilization data. See [`docs/rubric.md`](docs/rubric.md) for
+how that call gets made, or SPEC.md §10 for the full milestone-by-milestone status, including
+what's still missing (GCP's connector is unverified against a real account; Well-Architected
+scoring, the TUI, and the HTML report don't exist yet). Follow along, open an issue if you
+want to help shape where it goes, or drop into [Code To Cloud's
+Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it through than write it up.
 
 The name is reserved everywhere it needs to be ahead of a real release — the domain
 ([oporder.dev](https://oporder.dev)), [npm](https://www.npmjs.com/package/oporder)

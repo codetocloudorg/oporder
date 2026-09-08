@@ -1073,13 +1073,13 @@ AI-tool testing goes wrong:
 - `README.md` — the pitch (already written).
 - `SPEC.md` — this document, kept current as the source of truth, not a launch artifact that
   goes stale.
-- `docs/rubric.md` — the full 5/7-Rs and WAF scoring logic in plain language, so a skeptical
-  reader can audit the reasoning without reading Go source. **Illustrated with a Mermaid
-  decision-tree mind map of the 5/7-Rs tie-break logic from §5.3** — the same tool this
-  document has used throughout itself, chosen for the same reasons every other tooling
-  decision in this spec has been made: free, text-based, git-diffable, renders natively on
-  GitHub with no build step, and clears the open-source-or-free bar §1 now states as a
-  principle for anything this project depends on.
+- `docs/rubric.md` — **shipped**, covering the 5/7-Rs and debt-delta logic (both real,
+  tested code) in plain language, with the tie-break decision tree as a Mermaid diagram, real
+  worked examples from `cmd/sample-report`, and an explicit statement of exactly which
+  evidence signal is real today (AWS CloudWatch utilization) versus not yet gathered. The
+  original plan for this page also covered WAF scoring — that section isn't written yet
+  because §5.4 itself isn't built; it lands here when M4 does, not before, per §11's own
+  finding about documenting ahead of the code.
 - `docs/architecture/` — one page per MCP server / skill / workflow, each with its own
   "what it does, what it doesn't do, what it never sends anywhere," **each opening with a
   Mermaid diagram of that specific piece** — the same style as §4's system diagram and §0's
