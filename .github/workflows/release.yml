@@ -1,0 +1,38 @@
+name: Release
+
+# Fires ONLY on a real version tag push (e.g. `git tag v1.0.0 && git push
+# --tags`) — never on a push to main, and never automatically as a side
+# effect of any other workflow. Cutting the first real release is a
+# deliberate, human-approved action; this workflow exists so that once
+# that decision is made, the actual build/publish is repeatable and
+# tested, not so a release fires on its own. See .goreleaser.yaml's own
+# note on this, and SPEC.md §4.1 on GitHub Releases being the primary
+# distribution path.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

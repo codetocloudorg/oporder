@@ -2,11 +2,12 @@
 //
 // See SPEC.md for the full design. `scan` is honestly scoped to what's
 // real today: live inventory across whichever cloud providers have
-// credentials configured, workload-boundary detection against the
-// current directory, and tag/name correlation between the two
-// (internal/scan), written to SITUATION.md. It does not yet produce a
-// 5/7-Rs recommendation — see internal/scan's own package doc for
-// exactly what's real so far.
+// credentials configured, workload-boundary detection and proprietary-
+// dependency scanning against the current directory, tag/name
+// correlation between code and infrastructure, and a partial-evidence
+// 5/7-Rs call where enough real evidence exists (internal/scan), written
+// to SITUATION.md and MISSION.md — see internal/scan's own package doc
+// for exactly what's real so far and what isn't.
 package main
 
 import (
@@ -17,7 +18,10 @@ import (
 	"github.com/codetocloudorg/oporder/internal/scan"
 )
 
-const version = "0.0.0-dev"
+// version is overridden at build time via -ldflags "-X main.version=vX.Y.Z"
+// by .goreleaser.yaml — "dev" is the correct value for a `go run`/`go
+// build` invocation with no injected version, not a placeholder to fix.
+var version = "dev"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -130,7 +134,20 @@ Cloud provider setup (all optional — 'scan' always analyzes code even with non
   export OPORDER_AZURE_SUBSCRIPTION_ID=<id>   uses your existing 'az login' session
   export AWS_REGION=us-east-1                 uses your existing AWS credentials
   export OPORDER_GCP_PROJECT_ID=<id>          uses Application Default Credentials
-  echo "<token>" > ~/.cloudflare_token         generate a token at https://dash.cloudflare.com/profile/api-tokens
+  echo "<token>" > ~/.cloudflare_token         generate a token at https://dash.cloudflare.com/profile/api-tokens`)
+	printReleaseFooter()
+}
 
-No binary release exists yet. Follow progress: https://github.com/codetocloudorg/oporder`)
+// printReleaseFooter states honestly whether this exact binary is a
+// real tagged release (version injected via .goreleaser.yaml's ldflags)
+// or a local dev build (version left at its "dev" default) — the
+// message a released binary ships with can't hardcode "no release
+// exists yet" the way the source once did, since that binary would
+// itself be the release.
+func printReleaseFooter() {
+	if version == "dev" {
+		fmt.Println("No binary release exists yet. Follow progress: https://github.com/codetocloudorg/oporder")
+		return
+	}
+	fmt.Printf("oporder %s — https://github.com/codetocloudorg/oporder\n", version)
 }

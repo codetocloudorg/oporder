@@ -1,0 +1,57 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: oporder
+    main: ./cmd/oporder
+    binary: oporder
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version=v{{ .Version }}
+
+archives:
+  - id: oporder
+    ids: [oporder]
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+# No binary release exists yet (see SPEC.md §4.1) — this config exists so
+# the pipeline is real and tested (`goreleaser release --snapshot
+# --clean`) ahead of the first tag, not so a release fires automatically.
+# Cutting the first real release is a deliberate, human-approved action,
+# not something this config triggers on its own.
+release:
+  github:
+    owner: codetocloudorg
+    name: oporder
+  prerelease: auto

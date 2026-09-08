@@ -254,6 +254,14 @@ flowchart TB
 > below; both the npm package and the Homebrew formula become real installers the moment a
 > real tagged binary release exists to wrap, at which point each becomes a version bump, not
 > a new package or formula.
+>
+> **The release pipeline itself is real and tested now, ahead of the first tag** —
+> `.goreleaser.yaml` builds `cmd/oporder` for linux/darwin/windows × amd64/arm64, verified via
+> a local `goreleaser release --snapshot --clean` run that produced six real, runnable
+> binaries with the version correctly injected via ldflags. `.github/workflows/release.yml`
+> fires the real thing on a `v*` tag push — and only on that, never automatically as a side
+> effect of merging to `main`. Cutting the first actual release is still a deliberate,
+> separate, human decision; what changed is that the mechanism is no longer hypothetical.
 
 - **The CLI is the only thing users install.** A single Go binary, no runtime dependency,
   same reasoning Infracost, Steampipe, and driftctl already made — it's why they all cross-
