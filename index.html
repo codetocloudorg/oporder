@@ -40,6 +40,7 @@
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
+  html, body { overflow-x: hidden; max-width: 100%; }
   body {
     margin: 0;
     background:
@@ -197,8 +198,19 @@
   .footer-mascot { width: 22px; height: 22px; opacity: 0.7; }
   .no-vendor { color: var(--bad); }
 
+  @media (max-width: 640px) {
+    main { padding: 3rem 1.1rem 4rem; }
+    section { margin-bottom: 3.25rem; }
+    .tagline { font-size: 1.05rem; }
+    table, tr, th, td { display: block; width: auto; }
+    th { padding: 0 0 0.2rem; border-bottom: none; }
+    td { padding: 0 0 1.1rem; }
+    tr:last-child td { padding-bottom: 0; }
+    footer { justify-content: center; text-align: center; }
+  }
   @media (max-width: 480px) {
     .terminal pre { font-size: 0.74rem; }
+    .install { font-size: 0.8rem; }
   }
 </style>
 </head>
