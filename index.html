@@ -284,11 +284,11 @@
     modernization — reads your code and your live infrastructure, tells you honestly what's
     actually there, and hands you a plan.</p>
     <div class="install">
-      <div><span class="prompt">$</span>git clone https://github.com/codetocloudorg/oporder</div>
-      <div><span class="prompt">$</span>cd oporder</div>
-      <div><span class="prompt">$</span>go run ./cmd/sample-report</div>
+      <div><span class="prompt">$</span>brew tap codetocloudorg/tap</div>
+      <div><span class="prompt">$</span>brew trust codetocloudorg/tap</div>
+      <div><span class="prompt">$</span>brew install oporder</div>
     </div>
-    <p class="illustrative">no binary release yet, but that runs the real rubric and debt-delta engine right now — genuine reasoning on fixture data. Needs <a href="https://go.dev/dl/">Go</a> installed, nothing else. Name also reserved on <a href="https://www.npmjs.com/package/oporder">npm</a> ahead of a real release.</p>
+    <p class="illustrative"><strong>v0.1.0 is real and tagged</strong> — macOS &amp; Linux, Intel &amp; ARM64. No Go toolchain, no build step. Prefer npm? <code>npm install -g oporder</code> works the same way. Or grab a binary directly from <a href="https://github.com/codetocloudorg/oporder/releases/tag/v0.1.0">GitHub Releases</a>.</p>
   </section>
 
   <section>
@@ -304,10 +304,11 @@
       <button type="button" id="demo-replay">↻ Replay</button>
       <button type="button" id="demo-skip">Skip to end</button>
     </div>
-    <p class="illustrative">real, recorded output from <code>go run ./cmd/oporder scan</code>
-    against <a href="https://github.com/codetocloudorg/oporder">this actual public repo</a> —
-    code-only, no cloud account involved, reproduce it yourself with the command above. This
-    replays a captured run; it isn't live and doesn't execute anything on your machine.</p>
+    <p class="illustrative">real, recorded output from <code>oporder scan</code> against
+    <a href="https://github.com/codetocloudorg/oporder">this actual public repo</a> —
+    code-only, no cloud account involved, reproducible with <code>oporder scan</code> after
+    installing above. This replays a captured run; it isn't live and doesn't execute anything
+    on your machine.</p>
     <details class="situation-detail">
       <summary>View the real SITUATION.md this run produced</summary>
       <pre id="situation-md"></pre>
@@ -323,7 +324,7 @@
       </div>
 <pre><span class="t-prompt">$</span> <span class="t-white">oporder scan .</span>
 
-  OpOrder v0.1.0 <span class="t-dim">· scanning ./ (git: main @ 4f2a91c)</span>
+  OpOrder <span class="t-dim">· scanning ./ (git: main @ 4f2a91c)</span>
 
   <span class="t-cyan">⠋</span> Reading code<span class="t-dim">................</span> 142 services detected
   <span class="t-cyan">⠋</span> Connecting to your cloud<span class="t-dim">....</span> AWS, GCP, Azure &amp; Cloudflare — read-only
@@ -397,24 +398,23 @@
 
   <section>
     <div class="status-box">
-      <p><span class="dot">●</span> <strong>Early. Building in public.</strong> No tagged
-      release yet, but real, tested code today: code workload-detection, proprietary-SDK
-      scanning, live read-only connectors for AWS, Azure, GCP, and Cloudflare, and a
-      partial-evidence 5/7-Rs call — all wired together into a working <code>oporder
-      scan</code> command that needs no cloud account to be useful, and produces more when
-      you give it one.</p>
+      <p><span class="dot">●</span> <strong>Early, but v0.1.0 is real and tagged.</strong>
+      Code workload-detection, proprietary-SDK scanning, live read-only connectors for AWS,
+      Azure, GCP, and Cloudflare, a partial-evidence 5/7-Rs call, and a plain-English write-up
+      per workload — all wired together into a working <code>oporder scan</code> command that
+      needs no cloud account to be useful, and produces more when you give it one. Not the
+      full vision yet: no Well-Architected scoring, security baseline, cost/effort estimate,
+      or TUI. See the spec for the honest milestone-by-milestone status.</p>
       <p>Follow along, open an issue if you want to help shape where it goes, or drop into
       the Discord if you'd rather talk it through than write it up.</p>
       <div class="links">
         <a href="https://github.com/codetocloudorg/oporder">GitHub</a>
+        <a href="https://github.com/codetocloudorg/oporder/releases/tag/v0.1.0">v0.1.0 release</a>
         <a href="https://github.com/codetocloudorg/oporder/blob/main/SPEC.md">Read the spec</a>
         <a href="https://discord.gg/vwfwq2EpXJ">Discord</a>
       </div>
-      <p style="margin-top:1.25rem;margin-bottom:0.5rem">Name reserved ahead of a real release
-      on <a href="https://www.npmjs.com/package/oporder">npm</a> and
-      <a href="https://github.com/codetocloudorg/homebrew-tap">Homebrew</a> — both commands run
-      today and tell you honestly that no binary exists yet, rather than pretending to
-      install one:</p>
+      <p style="margin-top:1.25rem;margin-bottom:0.5rem">Real installers, both downloading the
+      actual v0.1.0 binary for your platform (macOS &amp; Linux, Intel &amp; ARM64):</p>
       <div class="install-row">
         <div class="install">
           <div><span class="prompt">$</span>npm install -g oporder</div>
@@ -426,8 +426,9 @@
         </div>
       </div>
       <p class="illustrative" style="text-align:left"><code>brew trust</code> is current
-      Homebrew's own requirement for any third-party tap, not specific to this one — both
-      become real installers the moment v1.0 tags its first binary.</p>
+      Homebrew's own requirement for any third-party tap, not specific to this one. Windows
+      binaries exist on the <a href="https://github.com/codetocloudorg/oporder/releases/tag/v0.1.0">release page</a>
+      but npm/Homebrew aren't wired up for Windows yet.</p>
     </div>
   </section>
 
