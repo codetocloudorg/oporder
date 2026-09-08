@@ -42,10 +42,65 @@ trustworthy — so OpOrder stops at the plan. If you want the migration or moder
 actually done, that's a separate, explicitly-scoped engagement with whoever you choose,
 [Code To Cloud](https://codetocloud.io) included.
 
+## Install
+
+**v0.1.0 is real and tagged.** Prebuilt binaries for macOS and Linux (Intel and ARM64) — pick
+whichever you already have:
+
+```
+brew tap codetocloudorg/tap
+brew trust codetocloudorg/tap
+brew install oporder
+```
+
+```
+npm install -g oporder
+```
+
+Or grab the binary directly from [GitHub
+Releases](https://github.com/codetocloudorg/oporder/releases/tag/v0.1.0) — six real,
+checksummed archives (darwin/linux × amd64/arm64, plus Windows, though the npm/Homebrew paths
+above aren't wired up for Windows yet).
+
+(The `brew trust` step is current Homebrew's own requirement for any third-party tap, not
+specific to this one — omit it and `brew install` refuses to load the formula at all.)
+
+No Go toolchain, no build step — `oporder scan` works the moment either command above
+finishes.
+
 ## Try it right now
 
-No released binary yet, but the reasoning engine is real and working today. Three commands,
-copy-paste, nothing to configure:
+```
+oporder scan
+```
+
+Run from any repo, this detects workload boundaries in the code (one per `Dockerfile`, one
+per Go module's `cmd/*/main.go`, etc. — see [`docs/rubric.md`](docs/rubric.md) for the
+reasoning model these feed, and SPEC.md §5.0 for the detection rules themselves), scans for
+proprietary cloud-vendor SDK dependencies, and writes a real `SITUATION.md` — including a
+Mermaid diagram of what it found — plus a `MISSION.md` with a plain-English paragraph
+explaining what was found and, where enough evidence exists, an actual 5/7-Rs recommendation.
+Needs no cloud account to be useful.
+
+**Add a real AWS, Azure, GCP, or Cloudflare account** and it also pulls live inventory and
+correlates it against the code — matched, unmatched-on-either-side, all shown, never guessed:
+
+```
+export AWS_REGION=us-east-1                          # uses your existing AWS credentials
+export OPORDER_AZURE_SUBSCRIPTION_ID=<subscription>   # uses your existing `az login` session
+export OPORDER_GCP_PROJECT_ID=<project>               # uses Application Default Credentials
+echo "<cloudflare-token>" > ~/.cloudflare_token       # from dash.cloudflare.com/profile/api-tokens
+
+oporder scan
+```
+
+Any subset works; skip what you don't have. A correlated workload with real utilization data
+(AWS CloudWatch or Azure Monitor) or a detected proprietary-SDK dependency (any provider) also
+gets a genuine, partial-evidence 5/7-Rs call, written to `MISSION.md` — see
+[`docs/rubric.md`](docs/rubric.md) for exactly what evidence is real today versus what's still
+missing (see SPEC.md §10's M2 for what's left).
+
+**No Go, no binary yet, just want to see the reasoning engine directly?**
 
 ```
 git clone https://github.com/codetocloudorg/oporder.git
@@ -57,72 +112,19 @@ That runs the actual 5/7-Rs rubric and debt-delta engine against five illustrati
 workloads and prints real, computed JSON — the genuine reasoning, on fixture data. Requires
 [Go](https://go.dev/dl/) installed, nothing else.
 
-**`oporder scan` is real too, and needs no cloud account to be useful:**
-
-```
-go run ./cmd/oporder scan
-```
-
-Run from any repo, this detects workload boundaries in the code (one per `Dockerfile`, one
-per Go module's `cmd/*/main.go`, etc. — see [`docs/rubric.md`](docs/rubric.md) for the
-reasoning model these feed, and SPEC.md §5.0 for the detection rules themselves) and writes a
-real `SITUATION.md`, including a Mermaid diagram of what it found.
-
-**Add a real AWS, Azure, GCP, or Cloudflare account** and it also pulls live inventory and
-correlates it against the code — matched, unmatched-on-either-side, all shown, never guessed:
-
-```
-export AWS_REGION=us-east-1                          # uses your existing AWS credentials
-export OPORDER_AZURE_SUBSCRIPTION_ID=<subscription>   # uses your existing `az login` session
-export OPORDER_GCP_PROJECT_ID=<project>               # uses Application Default Credentials
-echo "<cloudflare-token>" > ~/.cloudflare_token       # from dash.cloudflare.com/profile/api-tokens
-
-go run ./cmd/oporder scan
-```
-
-Any subset works; skip what you don't have. A correlated workload with real utilization data
-(AWS CloudWatch or Azure Monitor) or a detected proprietary-SDK dependency (any provider) also
-gets a genuine, partial-evidence 5/7-Rs call, written to `MISSION.md` — see
-[`docs/rubric.md`](docs/rubric.md) for exactly what evidence is real today versus what's still
-missing (see SPEC.md §10's M2 for what's left).
-
 ## Status
 
-Early. Building in public. No released binary yet, but `oporder scan` genuinely works end to
-end today: code workload-boundary detection, proprietary-dependency scanning, live read-only
-connectors for AWS, Azure, GCP, and Cloudflare, tag/name correlation between code and
-infrastructure, and a real, partial-evidence 5/7-Rs call backed by live utilization data
-(AWS/Azure) and detected dependencies (any provider). See [`docs/rubric.md`](docs/rubric.md)
-for how that call gets made, or SPEC.md §10 for the full milestone-by-milestone status, including
-what's still missing (GCP's connector is unverified against a real account; Well-Architected
-scoring, the TUI, and the HTML report don't exist yet). Follow along, open an issue if you
-want to help shape where it goes, or drop into [Code To Cloud's
+Early. Building in public — v0.1.0 is a real, working first release, not the full vision.
+`oporder scan` does today: code workload-boundary detection, proprietary-dependency scanning,
+live read-only connectors for AWS, Azure, GCP, and Cloudflare, tag/name correlation between
+code and infrastructure, a real partial-evidence 5/7-Rs call backed by live utilization data
+(AWS/Azure) and detected dependencies (any provider), and a plain-English write-up per
+workload. See [`docs/rubric.md`](docs/rubric.md) for how that call gets made, or SPEC.md §10
+for the full milestone-by-milestone status, including what's still missing (GCP's connector is
+unverified against a real account; Well-Architected scoring, security baseline, SDLC scoring,
+cost/effort estimation, the TUI, and the HTML report don't exist yet). Follow along, open an
+issue if you want to help shape where it goes, or drop into [Code To Cloud's
 Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it through than write it up.
-
-The name is reserved everywhere it needs to be ahead of a real release — the domain
-([oporder.dev](https://oporder.dev)), [npm](https://www.npmjs.com/package/oporder)
-(`oporder@0.0.1`), and a [Homebrew tap](https://github.com/codetocloudorg/homebrew-tap). Both
-commands below run today and honestly tell you no binary exists yet, rather than pretending
-to install one:
-
-```
-npm install -g oporder
-```
-
-```
-brew tap codetocloudorg/tap
-brew trust codetocloudorg/tap
-brew install oporder
-```
-
-(The `brew trust` step is current Homebrew's own requirement for any third-party tap, not
-specific to this one — omit it and `brew install` refuses to load the formula at all.
-Verified against a real `brew install` run, including the crash that happens without it.)
-
-GitHub Releases will be the primary way to get the binary once one exists (the release
-pipeline itself is already built and tested — see `.goreleaser.yaml` — just not triggered
-yet); npm and Homebrew both become real installers at the same time, for anyone who'd rather
-use the package manager they already have than download a release directly.
 
 ## Planned architecture
 
