@@ -95,16 +95,18 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem 1.25rem;
-    display: block;
+    display: inline-block;
     max-width: 100%;
     overflow-x: auto;
     text-align: left;
     color: var(--text-dim);
     font-size: 0.9rem;
     line-height: 1.9;
-    white-space: nowrap;
   }
+  .install div { white-space: nowrap; }
   .install .prompt { color: var(--accent); margin-right: 0.6rem; }
+  .install-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .install-row .install { font-size: 0.82rem; padding: 0.8rem 1rem; }
 
   /* --- terminal window --- */
   .terminal {
@@ -282,8 +284,9 @@
     modernization — reads your code and your live infrastructure, tells you honestly what's
     actually there, and hands you a plan.</p>
     <div class="install">
-      <span class="prompt">$</span>
-      <span>git clone https://github.com/codetocloudorg/oporder && cd oporder && go run ./cmd/sample-report</span>
+      <div><span class="prompt">$</span>git clone https://github.com/codetocloudorg/oporder</div>
+      <div><span class="prompt">$</span>cd oporder</div>
+      <div><span class="prompt">$</span>go run ./cmd/sample-report</div>
     </div>
     <p class="illustrative">no binary release yet, but that runs the real rubric and debt-delta engine right now — genuine reasoning on fixture data. Needs <a href="https://go.dev/dl/">Go</a> installed, nothing else. Name also reserved on <a href="https://www.npmjs.com/package/oporder">npm</a> ahead of a real release.</p>
   </section>
@@ -407,11 +410,21 @@
         <a href="https://github.com/codetocloudorg/oporder/blob/main/SPEC.md">Read the spec</a>
         <a href="https://discord.gg/vwfwq2EpXJ">Discord</a>
       </div>
-      <p class="illustrative" style="margin-top:1rem">Name reserved ahead of a real release on
-      <a href="https://www.npmjs.com/package/oporder">npm</a> and
-      <a href="https://github.com/codetocloudorg/homebrew-tap">Homebrew</a>
-      (<code>brew tap codetocloudorg/tap</code>) — both become real installers the moment
-      v1.0 tags its first binary.</p>
+      <p style="margin-top:1.25rem;margin-bottom:0.5rem">Name reserved ahead of a real release
+      on <a href="https://www.npmjs.com/package/oporder">npm</a> and
+      <a href="https://github.com/codetocloudorg/homebrew-tap">Homebrew</a> — both commands run
+      today and tell you honestly that no binary exists yet, rather than pretending to
+      install one:</p>
+      <div class="install-row">
+        <div class="install">
+          <div><span class="prompt">$</span>npm install -g oporder</div>
+        </div>
+        <div class="install">
+          <div><span class="prompt">$</span>brew tap codetocloudorg/tap</div>
+          <div><span class="prompt">$</span>brew install oporder</div>
+        </div>
+      </div>
+      <p class="illustrative" style="text-align:left">Both become real installers the moment v1.0 tags its first binary.</p>
     </div>
   </section>
 
