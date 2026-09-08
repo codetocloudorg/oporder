@@ -1,6 +1,6 @@
 {
   "name": "oporder",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Vendor-neutral assessment for cloud migration and application modernization. Placeholder reserving this name — no binary published yet, see the repository.",
   "homepage": "https://oporder.dev",
   "repository": {
@@ -22,10 +22,15 @@
     "well-architected",
     "devops"
   ],
+  "bin": {
+    "oporder": "./bin/oporder.js"
+  },
   "scripts": {
     "postinstall": "node ./postinstall.js"
   },
   "files": [
+    "bin/oporder.js",
+    "lib/message.js",
     "postinstall.js",
     "README.md"
   ]
