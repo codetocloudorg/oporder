@@ -1114,9 +1114,11 @@ tooling instead of code.
 > discoverability commitments are live, not aspirational: `robots.txt` allows everything and
 > points to a real `sitemap.xml`; `llms.txt` is published; the site is registered and verified
 > in both **Google Search Console** and **Bing Webmaster Tools**, with the sitemap submitted
-> to both. What's live is the honest placeholder described below and in §9.2 — real copy,
-> the terminal-window mockup of §6.1's illustrative scan, and the raccoon mark — not yet the
-> full embedded-demo centerpiece, which still waits on a working binary per the sequencing
+> to both. Responsive layout and a real social-share card are also live, not aspirational —
+> see the two new bullets above. What's live is the honest placeholder described below and in
+> §9.2 — real copy, the terminal-window mockup of §6.1's illustrative scan, and the raccoon
+> mark — not yet the full embedded-demo centerpiece, which still waits on a working binary
+> per the sequencing
 > already agreed. This section stays the design record for what the site should keep becoming;
 > it isn't rewritten to only describe what's live today, because the target is still the
 > fuller vision below.
@@ -1169,6 +1171,19 @@ actually is:
 - **Meets WCAG 2.2 AA per §6.4** — same standard as the HTML report, same reasoning: a site
   whose whole pitch is transparency doesn't get an exception from being usable by everyone
   who visits it.
+- **Responsive down to phone widths, verified rather than assumed.** No fixed-width element
+  is allowed to force horizontal scroll on the page itself — `html`/`body` cap at 100% width
+  as a backstop, and any content wide enough to need its own scroll (the install command, the
+  terminal mockup) scrolls inside its own box, not the page. Below 640px, layout adjusts
+  rather than just shrinking: the "what it produces" table switches from a fixed label column
+  to a stacked label-then-description layout, since a fixed-width column crushes the
+  description text into an unreadably narrow strip on a phone screen. Checked with a real
+  headless-browser render at 375px width (`scrollWidth === clientWidth`, no page-level
+  overflow) before calling it done — not just "looks fine at desktop width, should be fine."
+- **Real social-share card**, not a bare text link. `og:image`/`twitter:image` point at a
+  real rasterized PNG (built from the same raccoon mark used on the page, not a separate
+  brand asset) so a link dropped in Slack/Discord/X renders a preview instead of a plain
+  title-and-description card.
 
 ### 9.1 Discoverable and shareable — not left as an afterthought
 
