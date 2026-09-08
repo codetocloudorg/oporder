@@ -1360,6 +1360,27 @@ several smaller ones.
 > also naming what it's displacing or deferring in the same breath, that's the signal the
 > pattern repeated and needs stopping again.
 
+> [!success] Caught in the act, this time — building AWS/Azure utilization gathering, then stopping
+> Exactly the pattern the finding above warns about started happening again, mid-build: after
+> AWS CloudWatch utilization shipped, Azure Monitor utilization was already half-built before
+> the question got asked out loud — *"this tool is to scan software code and come up with
+> plans, are we building an Azure Migrate clone?"*, followed by the sharper version of the
+> same point: **this tool's core value is planning modernization, rewrite, or rebuild with
+> AI** — not reporting what a workload's CPU graph looks like. The honest answer to the first
+> question was yes, that specific piece was drifting there. Utilization gathering is real
+> infrastructure-monitoring work, and AWS Migration Hub and Azure Migrate already do it well;
+> it was never the differentiator. §5.1's code analysis — proprietary-SDK detection,
+> containerizability, monolith/decomposition signals — is what actually feeds a plan a
+> vendor's own migration tool structurally can't produce, because it requires reading the
+> code, not just querying the account. **The fix, applied in the same session the question
+> was asked, not deferred**: Azure's utilization connector shipped (it was nearly done, and
+> AWS+Azure covers both real IaaS providers, a reasonable stopping line), but GCP and
+> Cloudflare utilization gathering — the next two providers in the same pattern — were
+> explicitly not started, and the next work shifted to §5.1's code-analysis signals instead.
+> This is the mechanism §11's finding above says has to exist for the pattern to actually
+> stop: catching drift mid-build, not just diagnosing it after the fact, and changing
+> direction the same session rather than writing it down as a future intention.
+
 ---
 
 ## 12. Gap analysis — open risks not fully resolved above
