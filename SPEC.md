@@ -1271,6 +1271,19 @@ species — but it's the honest picture, not an assumption that nobody's thought
 > and — the exit criteria itself — no external-to-Code-To-Cloud reviewer has confirmed a
 > generated diagram against manual understanding on any of the four providers yet.
 
+> [!success] M2 progress — the rubric's first real call, deliberately narrow
+> `internal/rubric` existed before this session but had only ever been evaluated against
+> synthetic `Evidence` structs (`cmd/sample-report`). It's now wired to one real signal: AWS
+> CloudWatch CPU utilization feeds `TelemetryAvailable`/`NoOrNegligibleTraffic`, and a genuine
+> `rubric.Evaluate` call runs per correlated AWS workload, written to a real MISSION.md. Every
+> other Evidence field is correctly left at zero (no evidence gathered, not "false"), so most
+> workloads should land on insufficient-evidence — that's §5.3's own philosophy working as
+> designed, not a shortfall. This is nowhere near M2's actual scope: no debt-delta or
+> counter-case wiring yet, no utilization gathering for Azure/GCP/Cloudflare (so "applied
+> uniformly across all four providers" isn't met), and the exit criteria itself — an external,
+> no-stake reviewer's objection per provider's fixture set — needs a human, not more autonomous
+> work.
+
 Internal build order below — these are engineering milestones toward one v1.0 launch, not
 independently shippable releases the way the original phased roadmap was. Each one still gets
 its own exit check, because shipping four providers at once doesn't mean skipping verification
