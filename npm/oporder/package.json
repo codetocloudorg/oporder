@@ -23,7 +23,7 @@
     "devops"
   ],
   "bin": {
-    "oporder": "./bin/oporder.js"
+    "oporder": "bin/oporder.js"
   },
   "scripts": {
     "postinstall": "node ./postinstall.js"
