@@ -147,6 +147,56 @@
     margin-top: 0.6rem;
   }
 
+  /* --- real-scan replay --- */
+  .demo-controls { display: flex; justify-content: center; gap: 0.6rem; margin-top: 0.9rem; }
+  .demo-controls button {
+    font-family: inherit;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+  }
+  .demo-controls button:hover { color: var(--text); border-color: var(--accent-dim); }
+  .cursor {
+    display: inline-block;
+    width: 0.55em;
+    height: 1em;
+    background: var(--accent);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  details.situation-detail {
+    margin-top: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-raised);
+  }
+  details.situation-detail summary {
+    cursor: pointer;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.85rem;
+    color: var(--accent);
+    list-style: none;
+  }
+  details.situation-detail summary::-webkit-details-marker { display: none; }
+  details.situation-detail summary::before { content: "▸ "; }
+  details.situation-detail[open] summary::before { content: "▾ "; }
+  details.situation-detail pre {
+    margin: 0;
+    padding: 0 1.1rem 1.1rem;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 26rem;
+    overflow-y: auto;
+  }
+
   .quotes { list-style: none; margin: 0 0 1.5rem; padding: 0; }
   .quotes li {
     padding: 0.9rem 1rem;
@@ -239,7 +289,30 @@
   </section>
 
   <section>
-    <h2>what a run looks like</h2>
+    <h2>watch a real scan run</h2>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="title">oporder — zsh</span>
+      </div>
+      <pre id="demo-output" aria-live="polite"></pre>
+    </div>
+    <div class="demo-controls">
+      <button type="button" id="demo-replay">↻ Replay</button>
+      <button type="button" id="demo-skip">Skip to end</button>
+    </div>
+    <p class="illustrative">real, recorded output from <code>go run ./cmd/oporder scan</code>
+    against <a href="https://github.com/codetocloudorg/oporder">this actual public repo</a> —
+    code-only, no cloud account involved, reproduce it yourself with the command above. This
+    replays a captured run; it isn't live and doesn't execute anything on your machine.</p>
+    <details class="situation-detail">
+      <summary>View the real SITUATION.md this run produced</summary>
+      <pre id="situation-md"></pre>
+    </details>
+  </section>
+
+  <section>
+    <h2>the fuller vision — not built yet</h2>
     <div class="terminal">
       <div class="terminal-bar">
         <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
@@ -322,9 +395,11 @@
   <section>
     <div class="status-box">
       <p><span class="dot">●</span> <strong>Early. Building in public.</strong> No tagged
-      release yet, but real, tested code today: the 5/7-Rs rubric, the debt-delta model, and
-      live read-only connectors for AWS, Azure, and Cloudflare, wired together into a working
-      <code>oporder scan</code> command against real accounts.</p>
+      release yet, but real, tested code today: code workload-detection, proprietary-SDK
+      scanning, live read-only connectors for AWS, Azure, GCP, and Cloudflare, and a
+      partial-evidence 5/7-Rs call — all wired together into a working <code>oporder
+      scan</code> command that needs no cloud account to be useful, and produces more when
+      you give it one.</p>
       <p>Follow along, open an issue if you want to help shape where it goes, or drop into
       the Discord if you'd rather talk it through than write it up.</p>
       <div class="links">
@@ -352,5 +427,185 @@
   </footer>
 
 </main>
+
+<script type="text/plain" id="situation-md-source"># Situation
+
+Live inventory, code workload-boundary detection (§5.0), proprietary-dependency
+scanning (§5.1), and tag/name correlation between code and infrastructure —
+real and computed, not placeholders. All of it is deterministic string
+matching and file-layout heuristics; no LLM call is involved, per §5.0's own
+stated cost decision. IaC-state correlation (§5.0 tier 1) and §5.1's
+tree-sitter dependency graph aren't built yet — see SPEC.md §10 for what's
+left before this is the full picture §3.1 describes.
+
+## Infrastructure
+
+No provider connected. See SPEC.md §4.6a for how to set up credentials.
+
+## Code
+
+| Workload | Path | Confidence | Signal |
+|---|---|---|---|
+| live-aws-check | `cmd/live-aws-check` | medium | go.mod + cmd/live-aws-check/main.go |
+| live-azure-check | `cmd/live-azure-check` | medium | go.mod + cmd/live-azure-check/main.go |
+| live-azure-pricing-check | `cmd/live-azure-pricing-check` | medium | go.mod + cmd/live-azure-pricing-check/main.go |
+| live-cloudflare-check | `cmd/live-cloudflare-check` | medium | go.mod + cmd/live-cloudflare-check/main.go |
+| live-gcp-check | `cmd/live-gcp-check` | medium | go.mod + cmd/live-gcp-check/main.go |
+| oporder | `cmd/oporder` | medium | go.mod + cmd/oporder/main.go |
+| sample-report | `cmd/sample-report` | medium | go.mod + cmd/sample-report/main.go |
+
+## Proprietary dependencies
+
+§5.1: "this is where 'rehost' quietly becomes 'refactor.'" A manifest/import
+match against known vendor-SDK package prefixes — not a full AST parse, so
+this says *a* proprietary dependency exists, not which specific API calls
+are made. A workload with no entry here wasn't necessarily checked and found
+clean by a deeper analysis — it just has none of the manifest files this pass
+looks at, or none of them reference a known SDK.
+
+- **live-aws-check** (`cmd/live-aws-check`): github.com/aws/aws-sdk-go (aws, from go.mod), aws-sdk (aws, from go.mod), github.com/Azure/azure-sdk-for-go (azure, from go.mod), cloud.google.com/go (gcp, from go.mod)
+- **live-azure-check** (`cmd/live-azure-check`): github.com/aws/aws-sdk-go (aws, from go.mod), aws-sdk (aws, from go.mod), github.com/Azure/azure-sdk-for-go (azure, from go.mod), cloud.google.com/go (gcp, from go.mod)
+- **live-azure-pricing-check** (`cmd/live-azure-pricing-check`): github.com/aws/aws-sdk-go (aws, from go.mod), aws-sdk (aws, from go.mod), github.com/Azure/azure-sdk-for-go (azure, from go.mod), cloud.google.com/go (gcp, from go.mod)
+- **live-cloudflare-check** (`cmd/live-cloudflare-check`): github.com/aws/aws-sdk-go (aws, from go.mod), aws-sdk (aws, from go.mod), github.com/Azure/azure-sdk-for-go (azure, from go.mod), cloud.google.com/go (gcp, from go.mod)
+- **live-gcp-check** (`cmd/live-gcp-check`): github.com/aws/aws-sdk-go (aws, from go.mod), aws-sdk (aws, from go.mod), github.com/Azure/azure-sdk-for-go (azure, from go.mod), cloud.google.com/go (gcp, from go.mod)
+- **oporder** (`cmd/oporder`): github.com/aws/aws-sdk-go (aws, from go.mod), aws-sdk (aws, from go.mod), github.com/Azure/azure-sdk-for-go (azure, from go.mod), cloud.google.com/go (gcp, from go.mod)
+- **sample-report** (`cmd/sample-report`): github.com/aws/aws-sdk-go (aws, from go.mod), aws-sdk (aws, from go.mod), github.com/Azure/azure-sdk-for-go (azure, from go.mod), cloud.google.com/go (gcp, from go.mod)
+
+## Correlation
+
+```mermaid
+graph LR
+  subgraph Code
+    W0["live-aws-check"]
+    W1["live-azure-check"]
+    W2["live-azure-pricing-check"]
+    W3["live-cloudflare-check"]
+    W4["live-gcp-check"]
+    W5["oporder"]
+    W6["sample-report"]
+  end
+```
+
+**Code with no matching live resource** — not yet deployed, or deployed under a name/tag this pass couldn't match:
+
+- `cmd/live-aws-check` (live-aws-check)
+- `cmd/live-azure-check` (live-azure-check)
+- `cmd/live-azure-pricing-check` (live-azure-pricing-check)
+- `cmd/live-cloudflare-check` (live-cloudflare-check)
+- `cmd/live-gcp-check` (live-gcp-check)
+- `cmd/oporder` (oporder)
+- `cmd/sample-report` (sample-report)
+</script>
+
+<script>
+(function () {
+  var outputEl = document.getElementById('demo-output');
+  var replayBtn = document.getElementById('demo-replay');
+  var skipBtn = document.getElementById('demo-skip');
+  var situationEl = document.getElementById('situation-md');
+  var situationSource = document.getElementById('situation-md-source');
+  if (!outputEl || !replayBtn || !skipBtn) return;
+
+  if (situationEl && situationSource) {
+    situationEl.textContent = situationSource.textContent.replace(/^\n/, '');
+  }
+
+  var lines = [
+    { cmd: true,  text: "$ git clone https://github.com/codetocloudorg/oporder.git && cd oporder" },
+    { cmd: true,  text: "$ go run ./cmd/oporder scan" },
+    { cmd: false, text: "" },
+    { cmd: false, text: "oporder scan: no cloud provider configured — running code analysis only." },
+    { cmd: false, text: "" },
+    { cmd: false, text: "Set at least one of these to also scan live infrastructure and correlate it against" },
+    { cmd: false, text: "the code found here:" },
+    { cmd: false, text: "  OPORDER_AZURE_SUBSCRIPTION_ID   an Azure subscription ID (uses your existing 'az login' session)" },
+    { cmd: false, text: "  AWS_REGION                       an AWS region, e.g. us-east-1 (uses your existing AWS credentials)" },
+    { cmd: false, text: "  OPORDER_GCP_PROJECT_ID           a GCP project ID (uses Application Default Credentials)" },
+    { cmd: false, text: "  ~/.cloudflare_token              a file containing a Cloudflare API token (see SPEC.md §4.6a)" },
+    { cmd: false, text: "" },
+    { cmd: false, text: "The 5/7-Rs recommendation isn't wired in yet. See SPEC.md §10 for what's built so far." },
+    { cmd: false, text: "oporder scan: checking configured providers and analyzing code..." },
+    { cmd: false, text: "  code: 7 workload(s) detected" },
+    { cmd: false, text: "" },
+    { cmd: false, text: "Wrote SITUATION.md" }
+  ];
+  var full = lines.map(function (l) { return l.text; }).join('\n');
+
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var timer = null;
+
+  function cursor() {
+    var span = document.createElement('span');
+    span.className = 'cursor';
+    return span;
+  }
+
+  function render(buf, withCursor) {
+    outputEl.textContent = buf;
+    if (withCursor) outputEl.appendChild(cursor());
+  }
+
+  function stop() {
+    if (timer) { clearTimeout(timer); timer = null; }
+  }
+
+  function showAll() {
+    stop();
+    render(full, true);
+  }
+
+  function play() {
+    stop();
+    if (reduced) { showAll(); return; }
+    render('', true);
+    var li = 0, ci = 0, buf = '';
+
+    function step() {
+      if (li >= lines.length) { render(buf, true); return; }
+      var line = lines[li];
+      var prefix = li > 0 ? '\n' : '';
+
+      if (line.cmd) {
+        if (ci < line.text.length) {
+          buf += (ci === 0 ? prefix : '') + line.text[ci];
+          ci++;
+          render(buf, true);
+          timer = setTimeout(step, 16);
+          return;
+        }
+        li++; ci = 0;
+        timer = setTimeout(step, 140);
+        return;
+      }
+
+      buf += prefix + line.text;
+      render(buf, true);
+      li++;
+      timer = setTimeout(step, line.text ? 60 : 100);
+    }
+    step();
+  }
+
+  replayBtn.addEventListener('click', play);
+  skipBtn.addEventListener('click', showAll);
+
+  var played = false;
+  var terminalEl = outputEl.closest('.terminal');
+  if ('IntersectionObserver' in window && terminalEl) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting && !played) {
+          played = true;
+          play();
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.4 });
+    observer.observe(terminalEl);
+  } else {
+    play();
+  }
+})();
+</script>
 </body>
 </html>
