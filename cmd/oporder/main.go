@@ -69,8 +69,8 @@ The 5/7-Rs recommendation isn't wired in yet. See SPEC.md §10 for what's built 
 	fmt.Println("oporder scan: checking configured providers and analyzing code...")
 	situation := scan.Run(context.Background(), opts)
 
-	const outPath = "SITUATION.md"
-	if err := scan.WriteSituationMD(outPath, situation); err != nil {
+	const situationPath = "SITUATION.md"
+	if err := scan.WriteSituationMD(situationPath, situation); err != nil {
 		fmt.Fprintln(os.Stderr, "oporder scan: writing report failed:", err)
 		os.Exit(1)
 	}
@@ -85,7 +85,17 @@ The 5/7-Rs recommendation isn't wired in yet. See SPEC.md §10 for what's built 
 	if len(situation.Workloads) > 0 {
 		fmt.Printf("  code: %d workload(s) detected\n", len(situation.Workloads))
 	}
-	fmt.Printf("\nWrote %s\n", outPath)
+	fmt.Printf("\nWrote %s\n", situationPath)
+
+	if len(situation.Missions) > 0 {
+		const missionPath = "MISSION.md"
+		if err := scan.WriteMissionMD(missionPath, situation); err != nil {
+			fmt.Fprintln(os.Stderr, "oporder scan: writing mission report failed:", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Wrote %s (%d workload call(s), AWS-only for now — see SPEC.md §10 M2)\n", missionPath, len(situation.Missions))
+	}
+
 	if !anyRan && len(situation.Workloads) == 0 {
 		os.Exit(1)
 	}

@@ -1,25 +1,34 @@
-// Package scan orchestrates the provider connectors, codescan, and
-// correlate into the actual `oporder scan` command. This produces the
-// first real slice of §3.1's unified SITUATION.md: live inventory across
-// whichever providers have credentials configured, workload-boundary
-// detection against the local repo (§5.0), and tag/name correlation
-// between the two (§5.0 tiers 2-4) — all real, all deterministic, no LLM
-// call involved.
+// Package scan orchestrates the provider connectors, codescan, correlate,
+// and rubric into the actual `oporder scan` command. This produces the
+// first real slice of §3.1's unified output model: live inventory,
+// workload-boundary detection against the local repo (§5.0), tag/name
+// correlation between the two (§5.0 tiers 2-4), and — for AWS workloads
+// only, on real CloudWatch utilization data — a first genuine 5/7-Rs call
+// (§5.3), written to MISSION.md. All of it is deterministic; the only
+// non-deterministic step is the rubric's own trigger table, which is
+// itself plain code, not an LLM call.
 //
 // What this package deliberately does NOT do yet, because the underlying
 // pieces don't exist: §5.0 tier 1's IaC-state-as-ground-truth
 // correlation (needs a Terraform-state/CloudFormation parser), §5.1's
-// tree-sitter dependency graph and proprietary-SDK detection, the 5/7-Rs
-// call (§5.3, needs correlation output plus utilization data this
-// package doesn't gather), or cost/effort (§5.6). Claiming more than
-// that here would be exactly the kind of overclaiming this whole project
-// is built to refuse — see SPEC.md §11's own finding on this.
+// tree-sitter dependency graph and proprietary-SDK detection, utilization
+// gathering for Azure/GCP (so MISSION.md is AWS-only for now, not the
+// "applied uniformly across all four providers" M2 requires), or
+// cost/effort (§5.6). The rubric call itself also uses exactly one
+// evidence signal (telemetry) out of the dozen §5.3 defines — every other
+// field is correctly left at zero ("no evidence gathered," not "false"),
+// so most real workloads will land on Insufficient confidence until more
+// evidence-gathering exists, which is the honest result, not a bug.
+// Claiming more than that here would be exactly the kind of overclaiming
+// this whole project is built to refuse — see SPEC.md §11's own finding
+// on this.
 package scan
 
 import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/codetocloudorg/oporder/internal/codescan"
 	"github.com/codetocloudorg/oporder/internal/correlate"
@@ -27,7 +36,18 @@ import (
 	"github.com/codetocloudorg/oporder/internal/provider/azure"
 	"github.com/codetocloudorg/oporder/internal/provider/cloudflare"
 	"github.com/codetocloudorg/oporder/internal/provider/gcp"
+	"github.com/codetocloudorg/oporder/internal/rubric"
 )
+
+// retireCPUThresholdPercent is the average-CPU cutoff below which a
+// workload's traffic is treated as negligible for §5.3's Retire trigger.
+// An unvalidated heuristic, same status as every other coefficient in
+// SPEC.md §12's gap analysis — stated as a constant here specifically so
+// it's easy to find and revise once real outcomes can check it.
+const retireCPUThresholdPercent = 5.0
+
+// utilizationLookback is how far back CPUUtilization queries CloudWatch.
+const utilizationLookback = 7 * 24 * time.Hour
 
 // Options controls which providers a scan attempts to reach, and whether
 // it also analyzes local code. Each field left empty means "skip this
@@ -56,6 +76,18 @@ type Situation struct {
 	Workloads    []codescan.Workload
 	Unclassified []codescan.Unclassified
 	Correlation  correlate.Result
+	Missions     []Mission
+}
+
+// Mission is one workload's real §5.3 rubric call, built from whatever
+// evidence this pass could actually gather — currently AWS CloudWatch
+// utilization only. See the package doc for exactly how partial that
+// evidence is.
+type Mission struct {
+	WorkloadName string
+	WorkloadPath string
+	Resource     correlate.Resource
+	Result       rubric.Result
 }
 
 // Run attempts every configured provider independently — one provider
@@ -67,6 +99,7 @@ type Situation struct {
 func Run(ctx context.Context, opts Options) Situation {
 	var s Situation
 	var resources []correlate.Resource
+	awsUtilization := map[string]aws.Utilization{}
 
 	if opts.AzureSubscriptionID != "" {
 		pr, res := runAzure(ctx, opts.AzureSubscriptionID)
@@ -74,9 +107,12 @@ func Run(ctx context.Context, opts Options) Situation {
 		resources = append(resources, res...)
 	}
 	if opts.AWSRegion != "" {
-		pr, res := runAWS(ctx, opts.AWSRegion)
+		pr, res, util := runAWS(ctx, opts.AWSRegion)
 		s.Providers = append(s.Providers, pr)
 		resources = append(resources, res...)
+		for id, u := range util {
+			awsUtilization[id] = u
+		}
 	}
 	if opts.GCPProjectID != "" {
 		pr, res := runGCP(ctx, opts.GCPProjectID)
@@ -108,6 +144,26 @@ func Run(ctx context.Context, opts Options) Situation {
 			cw[i] = correlate.Workload{Name: w.Name, Path: w.Path}
 		}
 		s.Correlation = correlate.Correlate(cw, resources)
+	}
+
+	for _, m := range s.Correlation.Matches {
+		if m.Resource.Provider != "aws" {
+			continue
+		}
+		u, ok := awsUtilization[m.Resource.ID]
+		if !ok {
+			continue
+		}
+		evidence := rubric.Evidence{
+			TelemetryAvailable:    u.HasTelemetry,
+			NoOrNegligibleTraffic: u.HasTelemetry && u.AverageCPUPercent < retireCPUThresholdPercent,
+		}
+		s.Missions = append(s.Missions, Mission{
+			WorkloadName: m.WorkloadName,
+			WorkloadPath: m.WorkloadPath,
+			Resource:     m.Resource,
+			Result:       rubric.Evaluate(evidence),
+		})
 	}
 
 	return s
@@ -148,23 +204,31 @@ func runAzure(ctx context.Context, subscriptionID string) (ProviderResult, []cor
 	}, resources
 }
 
-func runAWS(ctx context.Context, region string) (ProviderResult, []correlate.Resource) {
+func runAWS(ctx context.Context, region string) (ProviderResult, []correlate.Resource, map[string]aws.Utilization) {
 	c, err := aws.NewClient(ctx, region)
 	if err != nil {
-		return ProviderResult{Provider: "aws", Detail: fmt.Sprintf("not connected — %v", err)}, nil
+		return ProviderResult{Provider: "aws", Detail: fmt.Sprintf("not connected — %v", err)}, nil, nil
 	}
 	instances, err := c.ListInstances(ctx)
 	if err != nil {
-		return ProviderResult{Provider: "aws", Detail: fmt.Sprintf("connected, but listing failed — %v", err)}, nil
+		return ProviderResult{Provider: "aws", Detail: fmt.Sprintf("connected, but listing failed — %v", err)}, nil, nil
 	}
 
 	var resources []correlate.Resource
+	utilization := map[string]aws.Utilization{}
 	for _, inst := range instances {
 		name := inst.Tags["Name"]
 		if name == "" {
 			name = inst.ID
 		}
 		resources = append(resources, correlate.Resource{Provider: "aws", ID: inst.ID, Name: name, Tags: inst.Tags})
+
+		if u, err := c.CPUUtilization(ctx, inst.ID, utilizationLookback); err == nil {
+			utilization[inst.ID] = u
+		}
+		// A failed utilization query for one instance never stops the
+		// scan — the instance still shows up in inventory and
+		// correlation, just without a Mission call.
 	}
 
 	return ProviderResult{
@@ -172,7 +236,7 @@ func runAWS(ctx context.Context, region string) (ProviderResult, []correlate.Res
 		Ran:      true,
 		Count:    len(instances),
 		Detail:   fmt.Sprintf("%d EC2 instance(s) in %s", len(instances), region),
-	}, resources
+	}, resources, utilization
 }
 
 func runGCP(ctx context.Context, projectID string) (ProviderResult, []correlate.Resource) {
