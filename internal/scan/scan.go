@@ -32,6 +32,7 @@ import (
 
 	"github.com/codetocloudorg/oporder/internal/codescan"
 	"github.com/codetocloudorg/oporder/internal/correlate"
+	"github.com/codetocloudorg/oporder/internal/debtdelta"
 	"github.com/codetocloudorg/oporder/internal/provider/aws"
 	"github.com/codetocloudorg/oporder/internal/provider/azure"
 	"github.com/codetocloudorg/oporder/internal/provider/cloudflare"
@@ -88,6 +89,7 @@ type Mission struct {
 	WorkloadPath string
 	Resource     correlate.Resource
 	Result       rubric.Result
+	DebtDelta    debtdelta.Result
 }
 
 // Run attempts every configured provider independently — one provider
@@ -158,11 +160,19 @@ func Run(ctx context.Context, opts Options) Situation {
 			TelemetryAvailable:    u.HasTelemetry,
 			NoOrNegligibleTraffic: u.HasTelemetry && u.AverageCPUPercent < retireCPUThresholdPercent,
 		}
+		call := rubric.Evaluate(evidence)
 		s.Missions = append(s.Missions, Mission{
 			WorkloadName: m.WorkloadName,
 			WorkloadPath: m.WorkloadPath,
 			Resource:     m.Resource,
-			Result:       rubric.Evaluate(evidence),
+			Result:       call,
+			// ExecutionContext is left at its zero value: §5.5's SDLC
+			// scoring, which would populate SDLCMaturityHigh, isn't built
+			// yet. That zero value still produces a real, honestly-labeled
+			// projection (assessRefactorOrRearchitect's default case) for
+			// Refactor/Rearchitect, and every other R's trajectory doesn't
+			// depend on execution context at all.
+			DebtDelta: debtdelta.Assess(call.R, debtdelta.ExecutionContext{}),
 		})
 	}
 
