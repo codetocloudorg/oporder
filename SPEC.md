@@ -1123,13 +1123,17 @@ tooling instead of code.
 > points to a real `sitemap.xml`; `llms.txt` is published; the site is registered and verified
 > in both **Google Search Console** and **Bing Webmaster Tools**, with the sitemap submitted
 > to both. Responsive layout and a real social-share card are also live, not aspirational —
-> see the two new bullets above. What's live is the honest placeholder described below and in
-> §9.2 — real copy, the terminal-window mockup of §6.1's illustrative scan, and the raccoon
-> mark — not yet the full embedded-demo centerpiece, which still waits on a working binary
-> per the sequencing
-> already agreed. This section stays the design record for what the site should keep becoming;
-> it isn't rewritten to only describe what's live today, because the target is still the
-> fuller vision below.
+> see the two new bullets above. **The participatory moment this section calls for is now
+> real, not a placeholder**: a terminal animation replays real, captured output from `oporder
+> scan` run against this actual public repo with no cloud account — reproducible by anyone
+> with the exact command shown, not a fabricated illustration — with the full real
+> `SITUATION.md` it produced available to expand below it. What's *not* live yet is the fuller
+> embedded-`oporder browse` TUI centerpiece described just below, which still waits on that
+> TUI existing at all (M4, §10) — the illustrative full-pipeline mockup stays on the page,
+> retitled "the fuller vision — not built yet" so it can't be mistaken for the real section
+> above it. This section stays the design record for what the site should keep becoming; it
+> isn't rewritten to only describe what's live today, because the target is still the fuller
+> vision below.
 
 **Checked the real thing before writing this, not a vague memory of it** — omarchy.org, in
 detail. What actually makes it work, concretely: dark-first with vivid, saturated accent
@@ -1149,11 +1153,15 @@ actually is:
 - **Dark-first, terminal-authentic, real content only.** Every screenshot on this site is a
   real captured `oporder scan` run (§6.1) or a real `oporder browse` session (§6.2) — never a
   mockup, never a stock photo of someone typing on a laptop.
-- **OpOrder's own participatory moment, not Omarchy's**: a live, embedded, sandboxed instance
-  of `oporder browse` (§6.2's TUI, rendered for the web) running against a real, pre-scanned
-  public repo — a visitor doesn't read about pros-and-cons recommendations, they arrow through
-  one themselves, on the page, before they've installed anything. That's the equivalent
-  centerpiece: not a gimmick borrowed from someone else's product, a real demo of this one.
+- **OpOrder's own participatory moment, not Omarchy's** — the destination version is a live,
+  embedded, sandboxed instance of `oporder browse` (§6.2's TUI, rendered for the web) running
+  against a real, pre-scanned public repo, arrowing through pros-and-cons recommendations
+  before installing anything; that still waits on the TUI existing (M4). **A real interim
+  version already shipped**: a terminal animation replaying real, captured `oporder scan`
+  output against this project's own public repo, reproducible by anyone with the exact
+  command shown, with the actual `SITUATION.md` it produced available to expand and read in
+  full — not a gimmick borrowed from someone else's product, a real (if smaller) demo of this
+  one, upgraded to the full TUI centerpiece once §6.2 exists.
 - **Confident, non-corporate copy, held to the same evidence standard as the rest of this
   document** — no hedging, but also no claim the report can't back up. *"AWS Transform
   recommends AWS. This doesn't recommend anything it profits from."* reads with exactly the
