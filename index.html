@@ -421,10 +421,13 @@
         </div>
         <div class="install">
           <div><span class="prompt">$</span>brew tap codetocloudorg/tap</div>
+          <div><span class="prompt">$</span>brew trust codetocloudorg/tap</div>
           <div><span class="prompt">$</span>brew install oporder</div>
         </div>
       </div>
-      <p class="illustrative" style="text-align:left">Both become real installers the moment v1.0 tags its first binary.</p>
+      <p class="illustrative" style="text-align:left"><code>brew trust</code> is current
+      Homebrew's own requirement for any third-party tap, not specific to this one — both
+      become real installers the moment v1.0 tags its first binary.</p>
     </div>
   </section>
 
