@@ -2,9 +2,11 @@
 //
 // See SPEC.md for the full design. `scan` is honestly scoped to what's
 // real today: live inventory across whichever cloud providers have
-// credentials configured (internal/scan), written to SITUATION.md. It does
-// not yet do code analysis, correlation, or produce a 5/7-Rs recommendation
-// — see internal/scan's own package doc for exactly what's real so far.
+// credentials configured, workload-boundary detection against the
+// current directory, and tag/name correlation between the two
+// (internal/scan), written to SITUATION.md. It does not yet produce a
+// 5/7-Rs recommendation — see internal/scan's own package doc for
+// exactly what's real so far.
 package main
 
 import (
@@ -38,26 +40,33 @@ func main() {
 }
 
 func runScan() {
+	repoPath, err := os.Getwd()
+	if err != nil {
+		repoPath = "."
+	}
+
 	opts := scan.Options{
+		RepoPath:            repoPath,
 		AzureSubscriptionID: os.Getenv("OPORDER_AZURE_SUBSCRIPTION_ID"),
 		AWSRegion:           os.Getenv("AWS_REGION"),
 		CloudflareTokenFile: cloudflareTokenPath(),
+		GCPProjectID:        os.Getenv("OPORDER_GCP_PROJECT_ID"),
 	}
 
-	if opts.AzureSubscriptionID == "" && opts.AWSRegion == "" && opts.CloudflareTokenFile == "" {
-		fmt.Println(`oporder scan: no provider configured — nothing to do yet.
+	if opts.AzureSubscriptionID == "" && opts.AWSRegion == "" && opts.CloudflareTokenFile == "" && opts.GCPProjectID == "" {
+		fmt.Println(`oporder scan: no cloud provider configured — running code analysis only.
 
-Set at least one of these before running again:
+Set at least one of these to also scan live infrastructure and correlate it against
+the code found here:
   OPORDER_AZURE_SUBSCRIPTION_ID   an Azure subscription ID (uses your existing 'az login' session)
   AWS_REGION                       an AWS region, e.g. us-east-1 (uses your existing AWS credentials)
+  OPORDER_GCP_PROJECT_ID           a GCP project ID (uses Application Default Credentials)
   ~/.cloudflare_token              a file containing a Cloudflare API token (see SPEC.md §4.6a)
 
-This only lists live inventory right now — code analysis, correlation, and the 5/7-Rs
-recommendation aren't wired in yet. See SPEC.md §10 for what's built so far.`)
-		os.Exit(1)
+The 5/7-Rs recommendation isn't wired in yet. See SPEC.md §10 for what's built so far.`)
 	}
 
-	fmt.Println("oporder scan: checking configured providers...")
+	fmt.Println("oporder scan: checking configured providers and analyzing code...")
 	situation := scan.Run(context.Background(), opts)
 
 	const outPath = "SITUATION.md"
@@ -73,8 +82,11 @@ recommendation aren't wired in yet. See SPEC.md §10 for what's built so far.`)
 			anyRan = true
 		}
 	}
+	if len(situation.Workloads) > 0 {
+		fmt.Printf("  code: %d workload(s) detected\n", len(situation.Workloads))
+	}
 	fmt.Printf("\nWrote %s\n", outPath)
-	if !anyRan {
+	if !anyRan && len(situation.Workloads) == 0 {
 		os.Exit(1)
 	}
 }
@@ -99,13 +111,15 @@ func printUsage() {
 	fmt.Println(`oporder — vendor-neutral assessment for cloud migration and application modernization
 
 Usage:
-  oporder scan          Live inventory across configured providers (see below), writes SITUATION.md
+  oporder scan          Analyzes the current directory's code, plus any configured cloud
+                        providers below, and correlates the two. Writes SITUATION.md.
   oporder version       Print the version
   oporder help          Show this message
 
-Provider setup (at least one required for 'scan'):
+Cloud provider setup (all optional — 'scan' always analyzes code even with none set):
   export OPORDER_AZURE_SUBSCRIPTION_ID=<id>   uses your existing 'az login' session
   export AWS_REGION=us-east-1                 uses your existing AWS credentials
+  export OPORDER_GCP_PROJECT_ID=<id>          uses Application Default Credentials
   echo "<token>" > ~/.cloudflare_token         generate a token at https://dash.cloudflare.com/profile/api-tokens
 
 No binary release exists yet. Follow progress: https://github.com/codetocloudorg/oporder`)
