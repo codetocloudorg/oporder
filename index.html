@@ -12,9 +12,13 @@
 <meta property="og:url" content="https://oporder.dev/">
 <meta property="og:title" content="OpOrder — vendor-neutral cloud & code assessment">
 <meta property="og:description" content="Reads your code and your live infrastructure, tells you honestly what's actually there, and hands you a plan — without an opinion about which cloud you should end up on.">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://oporder.dev/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="OpOrder — vendor-neutral cloud & code assessment">
 <meta name="twitter:description" content="Reads your code and your live infrastructure, tells you honestly what's actually there, and hands you a plan — without an opinion about which cloud you should end up on.">
+<meta name="twitter:image" content="https://oporder.dev/social-card.png">
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230d0f12'/%3E%3Cpath d='M28 38 L20 20 L38 30 Z M72 38 L80 20 L62 30 Z' fill='%23c7ccd4'/%3E%3Cellipse cx='50' cy='50' rx='26' ry='22' fill='%23c7ccd4'/%3E%3Cpath d='M27 44 Q50 34 73 44 Q68 56 50 58 Q32 56 27 44 Z' fill='%232a2e34'/%3E%3Ccircle cx='40' cy='47' r='3.2' fill='%23e8a33d'/%3E%3Ccircle cx='60' cy='47' r='3.2' fill='%23e8a33d'/%3E%3C/svg%3E">
 
@@ -90,13 +94,16 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem 1.25rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    text-align: left;
     color: var(--text-dim);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    line-height: 1.9;
+    white-space: nowrap;
   }
-  .install .prompt { color: var(--accent); }
+  .install .prompt { color: var(--accent); margin-right: 0.6rem; }
 
   /* --- terminal window --- */
   .terminal {
@@ -302,10 +309,10 @@
 
   <section>
     <div class="status-box">
-      <p><span class="dot">●</span> <strong>Early. Building in public.</strong> No released
-      binary yet, but real, tested code today: the 5/7-Rs rubric, the debt-delta model, and
-      read-only cloud connectors for AWS, Azure, and Cloudflare — not yet wired together into
-      one CLI command.</p>
+      <p><span class="dot">●</span> <strong>Early. Building in public.</strong> No tagged
+      release yet, but real, tested code today: the 5/7-Rs rubric, the debt-delta model, and
+      live read-only connectors for AWS, Azure, and Cloudflare, wired together into a working
+      <code>oporder scan</code> command against real accounts.</p>
       <p>Follow along, open an issue if you want to help shape where it goes, or drop into
       the Discord if you'd rather talk it through than write it up.</p>
       <div class="links">
@@ -313,6 +320,11 @@
         <a href="https://github.com/codetocloudorg/oporder/blob/main/SPEC.md">Read the spec</a>
         <a href="https://discord.gg/vwfwq2EpXJ">Discord</a>
       </div>
+      <p class="illustrative" style="margin-top:1rem">Name reserved ahead of a real release on
+      <a href="https://www.npmjs.com/package/oporder">npm</a> and
+      <a href="https://github.com/codetocloudorg/homebrew-tap">Homebrew</a>
+      (<code>brew tap codetocloudorg/tap</code>) — both become real installers the moment
+      v1.0 tags its first binary.</p>
     </div>
   </section>
 
