@@ -1256,6 +1256,21 @@ species — but it's the honest picture, not an assumption that nobody's thought
 > upgrade — stated here so nobody reading this roadmap later mistakes it for the cautious
 > version.
 
+> [!success] M1 progress — real, not scaffolding, but not exit-criteria-complete
+> `oporder scan` now always analyzes the current directory's code and reports workload
+> boundaries per §5.0's exact three-tier method (`internal/codescan`), correlates them against
+> live infrastructure via resource tags and name-matching per §5.0 tiers 2-4
+> (`internal/correlate`), and writes both a table and a Mermaid diagram into SITUATION.md — the
+> first real slice of §3.1's unified picture, not just per-provider counts. All four provider
+> connectors exist in code (AWS, Azure, Cloudflare, GCP), but **GCP is unverified** — no GCP
+> account was available to build against, so it follows the same patterns and passes the same
+> unit tests as the other three without ever having been run against a real project. What's
+> still missing before M1's exit criteria are actually met: §5.0 tier 1 (IaC state as ground
+> truth — needs a Terraform-state/CloudFormation parser), §5.1's tree-sitter dependency graph
+> and proprietary-SDK detection, Cloudflare's directional pricing isn't wired into `scan` yet,
+> and — the exit criteria itself — no external-to-Code-To-Cloud reviewer has confirmed a
+> generated diagram against manual understanding on any of the four providers yet.
+
 Internal build order below — these are engineering milestones toward one v1.0 launch, not
 independently shippable releases the way the original phased roadmap was. Each one still gets
 its own exit check, because shipping four providers at once doesn't mean skipping verification
