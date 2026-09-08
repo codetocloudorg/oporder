@@ -32,8 +32,8 @@ func TestAnalyze_SingleDockerfileRepo(t *testing.T) {
 		t.Fatalf("workloads = %+v, want exactly 1", got.Workloads)
 	}
 	w := got.Workloads[0]
-	if w.Confidence != ConfidenceHigh || w.Signal != "Dockerfile" || w.Path != "." {
-		t.Errorf("workload = %+v, want high confidence Dockerfile at path .", w)
+	if w.Confidence != ConfidenceHigh || w.Signal != "Dockerfile" || w.Path != "." || w.ManifestPath != "." {
+		t.Errorf("workload = %+v, want high confidence Dockerfile at path . with matching ManifestPath", w)
 	}
 	if len(got.Unclassified) != 0 {
 		t.Errorf("unclassified = %+v, want none (Dockerfile claims the whole root)", got.Unclassified)
@@ -60,6 +60,12 @@ func TestAnalyze_GoModuleWithMultipleBinaries(t *testing.T) {
 		names[w.Name] = true
 		if w.Confidence != ConfidenceMedium {
 			t.Errorf("workload %s: confidence = %s, want medium", w.Name, w.Confidence)
+		}
+		// The module root is where go.mod actually lives — both binaries
+		// share one dependency manifest, so ManifestPath must point at
+		// the root even though Path points at each binary's own cmd/ dir.
+		if w.ManifestPath != "." {
+			t.Errorf("workload %s: ManifestPath = %q, want %q (the module root, not %q)", w.Name, w.ManifestPath, ".", w.Path)
 		}
 	}
 	if !names["api"] || !names["worker"] {

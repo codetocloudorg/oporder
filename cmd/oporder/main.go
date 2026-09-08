@@ -93,7 +93,7 @@ The 5/7-Rs recommendation isn't wired in yet. See SPEC.md §10 for what's built 
 			fmt.Fprintln(os.Stderr, "oporder scan: writing mission report failed:", err)
 			os.Exit(1)
 		}
-		fmt.Printf("Wrote %s (%d workload call(s), AWS-only for now — see SPEC.md §10 M2)\n", missionPath, len(situation.Missions))
+		fmt.Printf("Wrote %s (%d workload call(s), partial evidence — see SPEC.md §10 M2)\n", missionPath, len(situation.Missions))
 	}
 
 	if !anyRan && len(situation.Workloads) == 0 {

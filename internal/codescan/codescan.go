@@ -30,12 +30,19 @@ const (
 	ConfidenceMedium Confidence = "medium"
 )
 
-// Workload is one detected deployable unit.
+// Workload is one detected deployable unit. Path is where the workload's
+// own code/entry point lives; ManifestPath is where its dependency
+// manifest (go.mod, package.json, etc.) actually is — the same directory
+// for almost every workload, but different for a Go module's cmd/*
+// binaries, which each have their own entry point while sharing one
+// go.mod at the module root. Callers doing manifest-based analysis
+// (depscan) should use ManifestPath, not Path.
 type Workload struct {
-	Name       string
-	Path       string
-	Confidence Confidence
-	Signal     string // which file(s) triggered detection
+	Name         string
+	Path         string
+	ManifestPath string
+	Confidence   Confidence
+	Signal       string // which file(s) triggered detection
 }
 
 // Unclassified is source code found with neither a deploy manifest nor a
@@ -118,10 +125,11 @@ func Analyze(root string) (Result, error) {
 
 		if marker, ok := firstPresent(names, manifestMarkers); ok {
 			res.Workloads = append(res.Workloads, Workload{
-				Name:       workloadName(rel),
-				Path:       displayPath(rel),
-				Confidence: ConfidenceHigh,
-				Signal:     marker,
+				Name:         workloadName(rel),
+				Path:         displayPath(rel),
+				ManifestPath: displayPath(rel),
+				Confidence:   ConfidenceHigh,
+				Signal:       marker,
 			})
 			return filepath.SkipDir
 		}
@@ -133,10 +141,11 @@ func Analyze(root string) (Result, error) {
 
 		if marker, ok := firstPresent(names, moduleMarkers); ok {
 			res.Workloads = append(res.Workloads, Workload{
-				Name:       workloadName(rel),
-				Path:       displayPath(rel),
-				Confidence: ConfidenceMedium,
-				Signal:     marker,
+				Name:         workloadName(rel),
+				Path:         displayPath(rel),
+				ManifestPath: displayPath(rel),
+				Confidence:   ConfidenceMedium,
+				Signal:       marker,
 			})
 			return filepath.SkipDir
 		}
@@ -181,10 +190,11 @@ func goModWorkloads(rel, absPath string) []Workload {
 			continue
 		}
 		out = append(out, Workload{
-			Name:       e.Name(),
-			Path:       displayPath(filepath.Join(rel, "cmd", e.Name())),
-			Confidence: ConfidenceMedium,
-			Signal:     "go.mod + cmd/" + e.Name() + "/main.go",
+			Name:         e.Name(),
+			Path:         displayPath(filepath.Join(rel, "cmd", e.Name())),
+			ManifestPath: displayPath(rel), // the module root, where go.mod actually lives
+			Confidence:   ConfidenceMedium,
+			Signal:       "go.mod + cmd/" + e.Name() + "/main.go",
 		})
 	}
 	if len(out) == 0 {
@@ -195,10 +205,11 @@ func goModWorkloads(rel, absPath string) []Workload {
 
 func libraryWorkload(rel string) Workload {
 	return Workload{
-		Name:       workloadName(rel),
-		Path:       displayPath(rel),
-		Confidence: ConfidenceMedium,
-		Signal:     "go.mod (library, no cmd/ entry point found)",
+		Name:         workloadName(rel),
+		Path:         displayPath(rel),
+		ManifestPath: displayPath(rel),
+		Confidence:   ConfidenceMedium,
+		Signal:       "go.mod (library, no cmd/ entry point found)",
 	}
 }
 

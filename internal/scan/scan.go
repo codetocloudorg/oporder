@@ -22,27 +22,31 @@
 //
 // What this package deliberately does NOT do yet, because the underlying
 // pieces don't exist: §5.0 tier 1's IaC-state-as-ground-truth
-// correlation (needs a Terraform-state/CloudFormation parser), §5.1's
-// tree-sitter dependency graph and proprietary-SDK detection, or
-// cost/effort (§5.6). The rubric call itself also uses exactly one
-// evidence signal (telemetry) out of the dozen §5.3 defines — every other
-// field is correctly left at zero ("no evidence gathered," not "false"),
-// so most real workloads will land on Insufficient confidence until more
-// evidence-gathering exists, which is the honest result, not a bug.
-// Claiming more than that here would be exactly the kind of overclaiming
-// this whole project is built to refuse — see SPEC.md §11's own finding
-// on this.
+// correlation (needs a Terraform-state/CloudFormation parser) or §5.1's
+// tree-sitter dependency graph (proprietary-SDK detection itself is now
+// real, via internal/depscan — a manifest/import-prefix match, not a
+// full AST parse), or cost/effort (§5.6). The rubric call itself uses
+// exactly two evidence signals (telemetry, proprietary dependencies) out
+// of the dozen §5.3 defines — every other field is correctly left at
+// zero ("no evidence gathered," not "false"), so most real workloads
+// will land on Insufficient confidence until more evidence-gathering
+// exists, which is the honest result, not a bug. Claiming more than that
+// here would be exactly the kind of overclaiming this whole project is
+// built to refuse — see SPEC.md §11's own finding on this.
 package scan
 
 import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/codetocloudorg/oporder/internal/codescan"
 	"github.com/codetocloudorg/oporder/internal/correlate"
 	"github.com/codetocloudorg/oporder/internal/debtdelta"
+	"github.com/codetocloudorg/oporder/internal/depscan"
 	"github.com/codetocloudorg/oporder/internal/provider/aws"
 	"github.com/codetocloudorg/oporder/internal/provider/azure"
 	"github.com/codetocloudorg/oporder/internal/provider/cloudflare"
@@ -104,13 +108,24 @@ type Situation struct {
 	Workloads    []codescan.Workload
 	Unclassified []codescan.Unclassified
 	Correlation  correlate.Result
+	Dependencies []WorkloadDependencies
 	Missions     []Mission
 }
 
+// WorkloadDependencies is one workload's depscan findings — only
+// populated for workloads that actually matched something, same pattern
+// as Correlation's unmatched lists: silence for a clean workload, an
+// explicit entry the moment there's something worth surfacing.
+type WorkloadDependencies struct {
+	WorkloadName string
+	WorkloadPath string
+	Result       depscan.Result
+}
+
 // Mission is one workload's real §5.3 rubric call, built from whatever
-// evidence this pass could actually gather — currently AWS CloudWatch
-// utilization only. See the package doc for exactly how partial that
-// evidence is.
+// evidence this pass could actually gather — currently CPU utilization
+// (AWS/Azure VMs) and proprietary-dependency findings (any provider).
+// See the package doc for exactly how partial that evidence is.
 type Mission struct {
 	WorkloadName string
 	WorkloadPath string
@@ -163,6 +178,7 @@ func Run(ctx context.Context, opts Options) Situation {
 		resources = append(resources, res...)
 	}
 
+	depsByPath := map[string]depscan.Result{}
 	if opts.RepoPath != "" {
 		result, err := codescan.Analyze(opts.RepoPath)
 		if err != nil {
@@ -173,6 +189,19 @@ func Run(ctx context.Context, opts Options) Situation {
 		} else {
 			s.Workloads = result.Workloads
 			s.Unclassified = result.Unclassified
+
+			for _, w := range s.Workloads {
+				dep, err := depscan.Analyze(filepath.Join(opts.RepoPath, w.ManifestPath))
+				if err != nil || !dep.HasProprietaryDependencies() {
+					continue
+				}
+				depsByPath[w.Path] = dep
+				s.Dependencies = append(s.Dependencies, WorkloadDependencies{
+					WorkloadName: w.Name,
+					WorkloadPath: w.Path,
+					Result:       dep,
+				})
+			}
 		}
 	}
 
@@ -185,13 +214,15 @@ func Run(ctx context.Context, opts Options) Situation {
 	}
 
 	for _, m := range s.Correlation.Matches {
-		u, ok := utilization[utilizationKey(m.Resource.Provider, m.Resource.ID)]
-		if !ok {
+		u, hasUtilization := utilization[utilizationKey(m.Resource.Provider, m.Resource.ID)]
+		dep, hasDeps := depsByPath[m.WorkloadPath]
+		if !hasUtilization && !hasDeps {
 			continue
 		}
 		evidence := rubric.Evidence{
-			TelemetryAvailable:    u.HasTelemetry,
-			NoOrNegligibleTraffic: u.HasTelemetry && u.AverageCPUPercent < retireCPUThresholdPercent,
+			TelemetryAvailable:                hasUtilization && u.HasTelemetry,
+			NoOrNegligibleTraffic:             hasUtilization && u.HasTelemetry && u.AverageCPUPercent < retireCPUThresholdPercent,
+			HasProprietaryManagedDependencies: hasDeps && dep.HasProprietaryDependencies(),
 		}
 		call := rubric.Evaluate(evidence)
 		s.Missions = append(s.Missions, Mission{
@@ -358,13 +389,13 @@ func WriteSituationMD(path string, s Situation) error {
 
 	fmt.Fprintln(f, "# Situation")
 	fmt.Fprintln(f)
-	fmt.Fprintln(f, "Live inventory, code workload-boundary detection (§5.0), and tag/name")
-	fmt.Fprintln(f, "correlation between them — real and computed, not placeholders. All of it")
-	fmt.Fprintln(f, "is deterministic string matching and file-layout heuristics; no LLM call")
-	fmt.Fprintln(f, "is involved, per §5.0's own stated cost decision. IaC-state correlation")
-	fmt.Fprintln(f, "(§5.0 tier 1) and §5.1's tree-sitter dependency graph aren't built yet —")
-	fmt.Fprintln(f, "see SPEC.md §10 for what's left before this is the full picture §3.1")
-	fmt.Fprintln(f, "describes.")
+	fmt.Fprintln(f, "Live inventory, code workload-boundary detection (§5.0), proprietary-dependency")
+	fmt.Fprintln(f, "scanning (§5.1), and tag/name correlation between code and infrastructure —")
+	fmt.Fprintln(f, "real and computed, not placeholders. All of it is deterministic string")
+	fmt.Fprintln(f, "matching and file-layout heuristics; no LLM call is involved, per §5.0's own")
+	fmt.Fprintln(f, "stated cost decision. IaC-state correlation (§5.0 tier 1) and §5.1's")
+	fmt.Fprintln(f, "tree-sitter dependency graph aren't built yet — see SPEC.md §10 for what's")
+	fmt.Fprintln(f, "left before this is the full picture §3.1 describes.")
 	fmt.Fprintln(f)
 
 	fmt.Fprintln(f, "## Infrastructure")
@@ -402,6 +433,26 @@ func WriteSituationMD(path string, s Situation) error {
 			}
 			fmt.Fprintln(f)
 		}
+	}
+
+	if len(s.Dependencies) > 0 {
+		fmt.Fprintln(f, "## Proprietary dependencies")
+		fmt.Fprintln(f)
+		fmt.Fprintln(f, "§5.1: \"this is where 'rehost' quietly becomes 'refactor.'\" A manifest/import")
+		fmt.Fprintln(f, "match against known vendor-SDK package prefixes — not a full AST parse, so")
+		fmt.Fprintln(f, "this says *a* proprietary dependency exists, not which specific API calls")
+		fmt.Fprintln(f, "are made. A workload with no entry here wasn't necessarily checked and found")
+		fmt.Fprintln(f, "clean by a deeper analysis — it just has none of the manifest files this pass")
+		fmt.Fprintln(f, "looks at, or none of them reference a known SDK.")
+		fmt.Fprintln(f)
+		for _, d := range s.Dependencies {
+			var parts []string
+			for _, finding := range d.Result.Findings {
+				parts = append(parts, fmt.Sprintf("%s (%s, from %s)", finding.Package, finding.Provider, finding.Source))
+			}
+			fmt.Fprintf(f, "- **%s** (`%s`): %s\n", d.WorkloadName, d.WorkloadPath, strings.Join(parts, ", "))
+		}
+		fmt.Fprintln(f)
 	}
 
 	if len(s.Correlation.Matches) > 0 || len(s.Correlation.UnmatchedWorkloads) > 0 || len(s.Correlation.UnmatchedResources) > 0 {

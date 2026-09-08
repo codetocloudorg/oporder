@@ -80,18 +80,20 @@ echo "<cloudflare-token>" > ~/.cloudflare_token       # from dash.cloudflare.com
 go run ./cmd/oporder scan
 ```
 
-Any subset works; skip what you don't have. On AWS specifically, a correlated workload with
-real CloudWatch utilization data also gets a genuine 5/7-Rs call, written to `MISSION.md` —
-the other three providers don't have utilization gathering wired in yet, so that part is
-AWS-only for now (see SPEC.md §10's M2 for what's left).
+Any subset works; skip what you don't have. A correlated workload with real utilization data
+(AWS CloudWatch or Azure Monitor) or a detected proprietary-SDK dependency (any provider) also
+gets a genuine, partial-evidence 5/7-Rs call, written to `MISSION.md` — see
+[`docs/rubric.md`](docs/rubric.md) for exactly what evidence is real today versus what's still
+missing (see SPEC.md §10's M2 for what's left).
 
 ## Status
 
 Early. Building in public. No released binary yet, but `oporder scan` genuinely works end to
-end today: code workload-boundary detection, live read-only connectors for AWS, Azure, GCP,
-and Cloudflare, tag/name correlation between the two, and — AWS-only so far — a real 5/7-Rs
-call backed by live CloudWatch utilization data. See [`docs/rubric.md`](docs/rubric.md) for
-how that call gets made, or SPEC.md §10 for the full milestone-by-milestone status, including
+end today: code workload-boundary detection, proprietary-dependency scanning, live read-only
+connectors for AWS, Azure, GCP, and Cloudflare, tag/name correlation between code and
+infrastructure, and a real, partial-evidence 5/7-Rs call backed by live utilization data
+(AWS/Azure) and detected dependencies (any provider). See [`docs/rubric.md`](docs/rubric.md)
+for how that call gets made, or SPEC.md §10 for the full milestone-by-milestone status, including
 what's still missing (GCP's connector is unverified against a real account; Well-Architected
 scoring, the TUI, and the HTML report don't exist yet). Follow along, open an issue if you
 want to help shape where it goes, or drop into [Code To Cloud's
