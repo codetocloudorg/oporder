@@ -111,8 +111,13 @@ npm install -g oporder
 
 ```
 brew tap codetocloudorg/tap
+brew trust codetocloudorg/tap
 brew install oporder
 ```
+
+(The `brew trust` step is current Homebrew's own requirement for any third-party tap, not
+specific to this one — omit it and `brew install` refuses to load the formula at all.
+Verified against a real `brew install` run, including the crash that happens without it.)
 
 GitHub Releases will be the primary way to get the binary once one exists (the release
 pipeline itself is already built and tested — see `.goreleaser.yaml` — just not triggered
