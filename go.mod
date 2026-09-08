@@ -8,6 +8,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0
 	github.com/aws/aws-sdk-go-v2 v1.46.0
 	github.com/aws/aws-sdk-go-v2/config v1.33.3
+	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.71.0
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.329.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.49.0
 	github.com/cloudflare/cloudflare-go/v4 v4.6.0

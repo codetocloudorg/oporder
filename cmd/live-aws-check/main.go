@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/codetocloudorg/oporder/internal/provider/aws"
 )
@@ -54,4 +55,17 @@ func main() {
 	}
 	fmt.Printf("  by state: %v\n", states)
 	fmt.Printf("  %d of %d instances have at least one tag\n", tagged, len(instances))
+
+	for _, i := range instances {
+		u, err := c.CPUUtilization(ctx, i.ID, 7*24*time.Hour)
+		if err != nil {
+			fmt.Printf("  utilization query failed: %v\n", err)
+			continue
+		}
+		if !u.HasTelemetry {
+			fmt.Println("  utilization: no CloudWatch datapoints in the last 7 days (un-instrumented, not necessarily idle)")
+			continue
+		}
+		fmt.Printf("  utilization: avg %.1f%% CPU over the last 7 days\n", u.AverageCPUPercent)
+	}
 }

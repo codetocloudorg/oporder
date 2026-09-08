@@ -8,9 +8,12 @@ package aws
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	cwtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
@@ -24,6 +27,7 @@ import (
 type Client struct {
 	ec2Client *ec2.Client
 	stsClient *sts.Client
+	cwClient  *cloudwatch.Client
 	region    string
 }
 
@@ -49,6 +53,7 @@ func NewClient(ctx context.Context, region string) (*Client, error) {
 	return &Client{
 		ec2Client: ec2.NewFromConfig(cfg),
 		stsClient: sts.NewFromConfig(cfg),
+		cwClient:  cloudwatch.NewFromConfig(cfg),
 		region:    region,
 	}, nil
 }
@@ -91,6 +96,69 @@ func (c *Client) ListInstances(ctx context.Context) ([]Instance, error) {
 		}
 	}
 	return out, nil
+}
+
+// Utilization is one instance's CPU utilization over a lookback window —
+// SPEC.md §5.2's "the primary signal for flagging retire candidates."
+// HasTelemetry is deliberately separate from AverageCPUPercent: an
+// instance CloudWatch has no datapoints for isn't necessarily idle, it
+// might just be un-instrumented, and §12's gap analysis requires the
+// rubric never conflate the two into a false "retire" signal.
+type Utilization struct {
+	InstanceID        string
+	AverageCPUPercent float64
+	HasTelemetry      bool
+}
+
+// CPUUtilization queries CloudWatch's AWS/EC2 CPUUtilization metric for
+// one instance over the given lookback window, using 1-hour datapoints.
+// Read-only, same as every other method in this package: GetMetricStatistics
+// is the CloudWatch equivalent of DescribeInstances, not a mutating call.
+func (c *Client) CPUUtilization(ctx context.Context, instanceID string, lookback time.Duration) (Utilization, error) {
+	end := time.Now()
+	start := end.Add(-lookback)
+
+	out, err := c.cwClient.GetMetricStatistics(ctx, &cloudwatch.GetMetricStatisticsInput{
+		Namespace:  aws.String("AWS/EC2"),
+		MetricName: aws.String("CPUUtilization"),
+		Dimensions: []cwtypes.Dimension{
+			{Name: aws.String("InstanceId"), Value: aws.String(instanceID)},
+		},
+		StartTime:  &start,
+		EndTime:    &end,
+		Period:     aws.Int32(3600),
+		Statistics: []cwtypes.Statistic{cwtypes.StatisticAverage},
+	})
+	if err != nil {
+		return Utilization{}, fmt.Errorf("aws: getting CPU utilization for %s: %w", instanceID, err)
+	}
+
+	if len(out.Datapoints) == 0 {
+		return Utilization{InstanceID: instanceID, HasTelemetry: false}, nil
+	}
+	return Utilization{
+		InstanceID:        instanceID,
+		AverageCPUPercent: averageOf(out.Datapoints),
+		HasTelemetry:      true,
+	}, nil
+}
+
+// averageOf is the pure-logic piece of CPUUtilization that's actually
+// unit-testable without a live account — same role as tagsFrom and
+// stateName in this file.
+func averageOf(datapoints []cwtypes.Datapoint) float64 {
+	var sum float64
+	var count int
+	for _, d := range datapoints {
+		if d.Average != nil {
+			sum += *d.Average
+			count++
+		}
+	}
+	if count == 0 {
+		return 0
+	}
+	return sum / float64(count)
 }
 
 func stateName(s *types.InstanceState) string {

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	cwtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
@@ -67,5 +68,53 @@ func TestStateName(t *testing.T) {
 	s := &types.InstanceState{Name: running}
 	if got := stateName(s); got != "running" {
 		t.Errorf("stateName(running) = %q, want %q", got, "running")
+	}
+}
+
+func TestAverageOf(t *testing.T) {
+	cases := []struct {
+		name string
+		in   []cwtypes.Datapoint
+		want float64
+	}{
+		{name: "no datapoints", in: nil, want: 0},
+		{
+			name: "single datapoint",
+			in:   []cwtypes.Datapoint{{Average: aws.Float64(12.5)}},
+			want: 12.5,
+		},
+		{
+			name: "multiple datapoints",
+			in: []cwtypes.Datapoint{
+				{Average: aws.Float64(10)},
+				{Average: aws.Float64(20)},
+				{Average: aws.Float64(30)},
+			},
+			want: 20,
+		},
+		{
+			name: "nil averages skipped, not treated as zero",
+			in: []cwtypes.Datapoint{
+				{Average: aws.Float64(10)},
+				{Average: nil},
+				{Average: aws.Float64(30)},
+			},
+			want: 20,
+		},
+		{
+			name: "all nil",
+			in: []cwtypes.Datapoint{
+				{Average: nil},
+			},
+			want: 0,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := averageOf(tc.in); got != tc.want {
+				t.Errorf("averageOf(%+v) = %v, want %v", tc.in, got, tc.want)
+			}
+		})
 	}
 }
