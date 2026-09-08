@@ -165,15 +165,28 @@ migration deadline: two triggers match (Retain, Rehost).
 
 This is the part most likely to be smaller than a reader expects, stated plainly rather than
 implied away: as of this writing, exactly **one** real evidence signal feeds the rubric from
-live data — AWS CloudWatch CPU utilization (`internal/provider/aws`'s `CPUUtilization`),
-wired through `internal/scan` into `TelemetryAvailable` / `NoOrNegligibleTraffic`, and only
-for workloads `internal/correlate` has already matched to a real AWS resource. Every other
-field in `Evidence` — business criticality, compliance/EOL drivers, egress cost, proprietary
-dependency detection, SaaS-equivalent pricing, and utilization on Azure/GCP/Cloudflare — isn't
-gathered yet. In practice, most real workloads scanned today will land on
-`insufficient-evidence`, and a workload with genuinely negligible AWS traffic will get a real,
-single-signal `retire` call. Both are the rubric working correctly on the evidence that
-actually exists, not a gap in the rubric itself.
+live data — CPU utilization, on AWS (CloudWatch) and Azure (Azure Monitor) VM-hosted
+workloads only — wired through `internal/scan` into `TelemetryAvailable` /
+`NoOrNegligibleTraffic`, and only for workloads `internal/correlate` has already matched to a
+real resource. Every other field in `Evidence` — business criticality, compliance/EOL
+drivers, egress cost, proprietary dependency detection, SaaS-equivalent pricing, and
+utilization on GCP/Cloudflare — isn't gathered yet. In practice, most real workloads scanned
+today will land on `insufficient-evidence`, and a workload with genuinely negligible traffic
+will get a real, single-signal `retire` call. Both are the rubric working correctly on the
+evidence that actually exists, not a gap in the rubric itself.
+
+**Deliberately not the direction this keeps extending in.** Wiring utilization for GCP and
+Cloudflare too would be more of the same pattern, but it's infrastructure-monitoring work
+that AWS Migration Hub and Azure Migrate already do — not this project's actual
+differentiator. Every workload with a real Mission entry today is, not coincidentally, a raw
+VM (EC2 or Azure VM) — and this project treats a VM as a last resort, not a destination.
+The next real evidence gap worth closing is on the code side: §5.1's proprietary-SDK and
+containerizability detection, which would let a VM-hosted workload's call say something a
+vendor migration tool structurally can't — not just "here's its utilization" but "here's
+whether this is actually a good candidate to leave the VM for a container or serverless
+target." That bias isn't a rubric signal yet; it needs real evidence, not just "currently on
+a VM," so it's stated here and in MISSION.md's own output rather than silently baked into a
+call the evidence doesn't support.
 
 See `internal/scan`'s package doc for the exact, current list of what's built and what isn't,
 and SPEC.md §10's M2 milestone for what closes this gap.

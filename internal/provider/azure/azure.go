@@ -9,8 +9,10 @@ package azure
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/monitor/armmonitor"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
@@ -23,6 +25,7 @@ type Client struct {
 	subscriptionID string
 	groupsClient   *armresources.ResourceGroupsClient
 	resClient      *armresources.Client
+	metricsClient  *armmonitor.MetricsClient
 }
 
 // ResourceGroup is the minimal shape §5.2's inventory needs — enough to
@@ -35,8 +38,11 @@ type ResourceGroup struct {
 }
 
 // Resource is one resource within a group — Tags matters directly for
-// §5.0's tier-2 correlation signal (service:/app:/team: tags).
+// §5.0's tier-2 correlation signal (service:/app:/team: tags). ID is the
+// full ARM resource ID, needed as-is by CPUUtilization since Azure
+// Monitor's metrics API addresses resources by URI, not by name.
 type Resource struct {
+	ID       string
 	Name     string
 	Type     string
 	Location string
@@ -60,11 +66,16 @@ func NewClient(subscriptionID string) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("azure: creating resources client: %w", err)
 	}
+	metricsClient, err := armmonitor.NewMetricsClient(subscriptionID, cred, nil)
+	if err != nil {
+		return nil, fmt.Errorf("azure: creating metrics client: %w", err)
+	}
 
 	return &Client{
 		subscriptionID: subscriptionID,
 		groupsClient:   groupsClient,
 		resClient:      resClient,
+		metricsClient:  metricsClient,
 	}, nil
 }
 
@@ -112,6 +123,9 @@ func (c *Client) ListResources(ctx context.Context, resourceGroup string) ([]Res
 				continue
 			}
 			res := Resource{Name: *r.Name, Tags: tagsFrom(r.Tags)}
+			if r.ID != nil {
+				res.ID = *r.ID
+			}
 			if r.Type != nil {
 				res.Type = *r.Type
 			}
@@ -122,6 +136,97 @@ func (c *Client) ListResources(ctx context.Context, resourceGroup string) ([]Res
 		}
 	}
 	return out, nil
+}
+
+// VirtualMachineResourceType is the ARM resource type CPUUtilization is
+// meaningful for — "Percentage CPU" is a Compute-specific metric, not a
+// generic one every resource type exposes. Callers should only query
+// utilization for resources of this type, same as the AWS connector only
+// ever queries utilization for EC2 instances.
+const VirtualMachineResourceType = "Microsoft.Compute/virtualMachines"
+
+// Utilization is one VM's CPU utilization over a lookback window,
+// mirroring the AWS connector's type of the same name — SPEC.md §5.2's
+// "the primary signal for flagging retire candidates." HasTelemetry is
+// kept separate from AverageCPUPercent for the same reason as the AWS
+// connector: a resource Azure Monitor has no datapoints for isn't
+// necessarily idle, it might just be un-instrumented, and §12's gap
+// analysis requires the two never be conflated into a false Retire
+// signal.
+type Utilization struct {
+	ResourceID        string
+	AverageCPUPercent float64
+	HasTelemetry      bool
+}
+
+// CPUUtilization queries Azure Monitor's "Percentage CPU" metric for one
+// resource over the given lookback window, using 1-hour datapoints.
+// Read-only, same as every other method in this package: Monitor's List
+// call is a query, not a mutating operation. resourceID must be the
+// resource's full ARM ID (Resource.ID), not just its name — that's what
+// Azure Monitor's API addresses resources by.
+func (c *Client) CPUUtilization(ctx context.Context, resourceID string, lookback time.Duration) (Utilization, error) {
+	end := time.Now().UTC()
+	start := end.Add(-lookback)
+	timespan := start.Format(time.RFC3339) + "/" + end.Format(time.RFC3339)
+	aggregation := "Average"
+	metricNames := "Percentage CPU"
+	interval := "PT1H"
+
+	resp, err := c.metricsClient.List(ctx, resourceID, &armmonitor.MetricsClientListOptions{
+		Metricnames: &metricNames,
+		Aggregation: &aggregation,
+		Timespan:    &timespan,
+		Interval:    &interval,
+	})
+	if err != nil {
+		return Utilization{}, fmt.Errorf("azure: getting CPU utilization for %s: %w", resourceID, err)
+	}
+
+	values := averagesFrom(resp.Value)
+	if len(values) == 0 {
+		return Utilization{ResourceID: resourceID, HasTelemetry: false}, nil
+	}
+	return Utilization{
+		ResourceID:        resourceID,
+		AverageCPUPercent: meanOf(values),
+		HasTelemetry:      true,
+	}, nil
+}
+
+// averagesFrom flattens Azure Monitor's nested metric/timeseries/datapoint
+// response shape into a plain slice of average values — the pure-logic
+// piece of CPUUtilization that's actually unit-testable without a live
+// account, same role as tagsFrom in this file.
+func averagesFrom(metrics []*armmonitor.Metric) []float64 {
+	var out []float64
+	for _, m := range metrics {
+		if m == nil {
+			continue
+		}
+		for _, ts := range m.Timeseries {
+			if ts == nil {
+				continue
+			}
+			for _, v := range ts.Data {
+				if v != nil && v.Average != nil {
+					out = append(out, *v.Average)
+				}
+			}
+		}
+	}
+	return out
+}
+
+func meanOf(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range values {
+		sum += v
+	}
+	return sum / float64(len(values))
 }
 
 // tagsFrom converts the SDK's map[string]*string (nil-able values, matching

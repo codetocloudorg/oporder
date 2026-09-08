@@ -5,6 +5,7 @@ go 1.27.1
 require (
 	cloud.google.com/go/compute v1.67.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.1
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/monitor/armmonitor v0.13.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0
 	github.com/aws/aws-sdk-go-v2 v1.46.0
 	github.com/aws/aws-sdk-go-v2/config v1.33.3

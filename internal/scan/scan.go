@@ -2,18 +2,28 @@
 // and rubric into the actual `oporder scan` command. This produces the
 // first real slice of §3.1's unified output model: live inventory,
 // workload-boundary detection against the local repo (§5.0), tag/name
-// correlation between the two (§5.0 tiers 2-4), and — for AWS workloads
-// only, on real CloudWatch utilization data — a first genuine 5/7-Rs call
-// (§5.3), written to MISSION.md. All of it is deterministic; the only
-// non-deterministic step is the rubric's own trigger table, which is
-// itself plain code, not an LLM call.
+// correlation between the two (§5.0 tiers 2-4), and — for AWS and Azure
+// VM-hosted workloads, on real CloudWatch/Azure Monitor utilization data
+// — a first genuine 5/7-Rs call (§5.3), written to MISSION.md. All of it
+// is deterministic; the only non-deterministic step is the rubric's own
+// trigger table, which is itself plain code, not an LLM call.
+//
+// Deliberately not a direction to keep pushing: gathering utilization
+// for GCP and Cloudflare too would extend provider parity, but it's the
+// same kind of infrastructure-monitoring work AWS Migration Hub and
+// Azure Migrate already do — not this project's actual differentiator.
+// The next real gap to close is on the code side (§5.1's proprietary-SDK
+// and containerizability detection), which is what would let a VM-hosted
+// workload's Mission entry say something a vendor migration tool
+// structurally can't: not just "here's its utilization" but "here's
+// whether it's actually a good candidate to leave the VM behind for a
+// container or serverless target," per this project's own modernization
+// bias (see MISSION.md's own note on this).
 //
 // What this package deliberately does NOT do yet, because the underlying
 // pieces don't exist: §5.0 tier 1's IaC-state-as-ground-truth
 // correlation (needs a Terraform-state/CloudFormation parser), §5.1's
-// tree-sitter dependency graph and proprietary-SDK detection, utilization
-// gathering for Azure/GCP (so MISSION.md is AWS-only for now, not the
-// "applied uniformly across all four providers" M2 requires), or
+// tree-sitter dependency graph and proprietary-SDK detection, or
 // cost/effort (§5.6). The rubric call itself also uses exactly one
 // evidence signal (telemetry) out of the dozen §5.3 defines — every other
 // field is correctly left at zero ("no evidence gathered," not "false"),
@@ -47,8 +57,25 @@ import (
 // it's easy to find and revise once real outcomes can check it.
 const retireCPUThresholdPercent = 5.0
 
-// utilizationLookback is how far back CPUUtilization queries CloudWatch.
+// utilizationLookback is how far back a provider's CPUUtilization call
+// looks — CloudWatch for AWS, Azure Monitor for Azure.
 const utilizationLookback = 7 * 24 * time.Hour
+
+// utilizationSample is the common shape this package needs from any
+// provider's utilization type (aws.Utilization, azure.Utilization) —
+// just enough to build rubric.Evidence, regardless of which provider's
+// metrics API produced it.
+type utilizationSample struct {
+	HasTelemetry      bool
+	AverageCPUPercent float64
+}
+
+// utilizationKey combines provider and resource ID so utilization
+// lookups can't collide across providers even though AWS instance IDs
+// and Azure ARM resource IDs happen to look nothing alike in practice.
+func utilizationKey(provider, id string) string {
+	return provider + "|" + id
+}
 
 // Options controls which providers a scan attempts to reach, and whether
 // it also analyzes local code. Each field left empty means "skip this
@@ -101,19 +128,28 @@ type Mission struct {
 func Run(ctx context.Context, opts Options) Situation {
 	var s Situation
 	var resources []correlate.Resource
-	awsUtilization := map[string]aws.Utilization{}
+	utilization := map[string]utilizationSample{}
 
 	if opts.AzureSubscriptionID != "" {
-		pr, res := runAzure(ctx, opts.AzureSubscriptionID)
+		pr, res, util := runAzure(ctx, opts.AzureSubscriptionID)
 		s.Providers = append(s.Providers, pr)
 		resources = append(resources, res...)
+		for id, u := range util {
+			utilization[utilizationKey("azure", id)] = utilizationSample{
+				HasTelemetry:      u.HasTelemetry,
+				AverageCPUPercent: u.AverageCPUPercent,
+			}
+		}
 	}
 	if opts.AWSRegion != "" {
 		pr, res, util := runAWS(ctx, opts.AWSRegion)
 		s.Providers = append(s.Providers, pr)
 		resources = append(resources, res...)
 		for id, u := range util {
-			awsUtilization[id] = u
+			utilization[utilizationKey("aws", id)] = utilizationSample{
+				HasTelemetry:      u.HasTelemetry,
+				AverageCPUPercent: u.AverageCPUPercent,
+			}
 		}
 	}
 	if opts.GCPProjectID != "" {
@@ -149,10 +185,7 @@ func Run(ctx context.Context, opts Options) Situation {
 	}
 
 	for _, m := range s.Correlation.Matches {
-		if m.Resource.Provider != "aws" {
-			continue
-		}
-		u, ok := awsUtilization[m.Resource.ID]
+		u, ok := utilization[utilizationKey(m.Resource.Provider, m.Resource.ID)]
 		if !ok {
 			continue
 		}
@@ -179,19 +212,24 @@ func Run(ctx context.Context, opts Options) Situation {
 	return s
 }
 
-func runAzure(ctx context.Context, subscriptionID string) (ProviderResult, []correlate.Resource) {
+func runAzure(ctx context.Context, subscriptionID string) (ProviderResult, []correlate.Resource, map[string]azure.Utilization) {
 	c, err := azure.NewClient(subscriptionID)
 	if err != nil {
-		return ProviderResult{Provider: "azure", Detail: fmt.Sprintf("not connected — %v", err)}, nil
+		return ProviderResult{Provider: "azure", Detail: fmt.Sprintf("not connected — %v", err)}, nil, nil
 	}
 	groups, err := c.ListResourceGroups(ctx)
 	if err != nil {
-		return ProviderResult{Provider: "azure", Detail: fmt.Sprintf("connected, but listing failed — %v", err)}, nil
+		return ProviderResult{Provider: "azure", Detail: fmt.Sprintf("connected, but listing failed — %v", err)}, nil, nil
 	}
 
 	var resources []correlate.Resource
+	utilization := map[string]azure.Utilization{}
 	for _, g := range groups {
+		// Resource groups are correlation targets in their own right
+		// (e.g. a group tagged service:billing), keyed by name since a
+		// group has no ARM resource ID of its own the way a resource does.
 		resources = append(resources, correlate.Resource{Provider: "azure", ID: g.Name, Name: g.Name, Tags: g.Tags})
+
 		items, err := c.ListResources(ctx, g.Name)
 		if err != nil {
 			continue // best-effort: the resource-group count above still stands
@@ -199,10 +237,19 @@ func runAzure(ctx context.Context, subscriptionID string) (ProviderResult, []cor
 		for _, r := range items {
 			resources = append(resources, correlate.Resource{
 				Provider: "azure",
-				ID:       g.Name + "/" + r.Name,
+				ID:       r.ID,
 				Name:     r.Name,
 				Tags:     r.Tags,
 			})
+
+			if r.Type != azure.VirtualMachineResourceType || r.ID == "" {
+				continue
+			}
+			if u, err := c.CPUUtilization(ctx, r.ID, utilizationLookback); err == nil {
+				utilization[r.ID] = u
+			}
+			// A failed utilization query for one VM never stops the scan
+			// — same fan-in guard principle as the AWS connector.
 		}
 	}
 
@@ -211,7 +258,7 @@ func runAzure(ctx context.Context, subscriptionID string) (ProviderResult, []cor
 		Ran:      true,
 		Count:    len(groups),
 		Detail:   fmt.Sprintf("%d resource group(s)", len(groups)),
-	}, resources
+	}, resources, utilization
 }
 
 func runAWS(ctx context.Context, region string) (ProviderResult, []correlate.Resource, map[string]aws.Utilization) {
