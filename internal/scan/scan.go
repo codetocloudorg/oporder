@@ -47,6 +47,7 @@ import (
 	"github.com/codetocloudorg/oporder/internal/correlate"
 	"github.com/codetocloudorg/oporder/internal/debtdelta"
 	"github.com/codetocloudorg/oporder/internal/depscan"
+	"github.com/codetocloudorg/oporder/internal/narrative"
 	"github.com/codetocloudorg/oporder/internal/provider/aws"
 	"github.com/codetocloudorg/oporder/internal/provider/azure"
 	"github.com/codetocloudorg/oporder/internal/provider/cloudflare"
@@ -110,6 +111,7 @@ type Situation struct {
 	Correlation  correlate.Result
 	Dependencies []WorkloadDependencies
 	Missions     []Mission
+	Narratives   []narrative.Paragraph
 }
 
 // WorkloadDependencies is one workload's depscan findings — only
@@ -240,7 +242,50 @@ func Run(ctx context.Context, opts Options) Situation {
 		})
 	}
 
+	s.Narratives = buildNarratives(s)
+
 	return s
+}
+
+// buildNarratives composes the plain-English write-up for every detected
+// workload — not just correlated ones, so a workload with only a
+// dependency finding and no live infrastructure still gets a real
+// paragraph, per internal/narrative's package doc.
+func buildNarratives(s Situation) []narrative.Paragraph {
+	matchByPath := map[string]correlate.Match{}
+	for _, m := range s.Correlation.Matches {
+		matchByPath[m.WorkloadPath] = m
+	}
+	unmatchedPaths := map[string]bool{}
+	for _, w := range s.Correlation.UnmatchedWorkloads {
+		unmatchedPaths[w.Path] = true
+	}
+	depsByPath := map[string]depscan.Result{}
+	for _, d := range s.Dependencies {
+		depsByPath[d.WorkloadPath] = d.Result
+	}
+	missionByPath := map[string]Mission{}
+	for _, m := range s.Missions {
+		missionByPath[m.WorkloadPath] = m
+	}
+
+	inputs := make([]narrative.Input, 0, len(s.Workloads))
+	for _, w := range s.Workloads {
+		in := narrative.Input{
+			Workload:     w,
+			Dependencies: depsByPath[w.Path],
+			Unmatched:    unmatchedPaths[w.Path],
+		}
+		if m, ok := matchByPath[w.Path]; ok {
+			mCopy := m
+			in.Match = &mCopy
+		}
+		if mission, ok := missionByPath[w.Path]; ok {
+			in.Mission = &narrative.MissionEvidence{Result: mission.Result, DebtDelta: mission.DebtDelta}
+		}
+		inputs = append(inputs, in)
+	}
+	return narrative.Explain(inputs)
 }
 
 func runAzure(ctx context.Context, subscriptionID string) (ProviderResult, []correlate.Resource, map[string]azure.Utilization) {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/codetocloudorg/oporder/internal/correlate"
 	"github.com/codetocloudorg/oporder/internal/debtdelta"
+	"github.com/codetocloudorg/oporder/internal/narrative"
 	"github.com/codetocloudorg/oporder/internal/rubric"
 )
 
@@ -64,5 +65,34 @@ func TestWriteMissionMD_RealRetireCall(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf("MISSION.md missing %q; got:\n%s", want, got)
 		}
+	}
+}
+
+func TestWriteMissionMD_NarrativesRenderEvenWithNoMissions(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "MISSION.md")
+
+	// A code-only scan (no cloud account, so no Missions at all) should
+	// still produce a real "In plain English" section — narratives cover
+	// every detected workload, not just correlated ones.
+	s := Situation{
+		Narratives: []narrative.Paragraph{
+			{WorkloadName: "worker", WorkloadPath: "cmd/worker", Text: "worker is probably a deployable workload."},
+		},
+	}
+
+	if err := WriteMissionMD(path, s); err != nil {
+		t.Fatalf("WriteMissionMD: %v", err)
+	}
+	got := readFile(t, path)
+
+	if !strings.Contains(got, "nothing to call yet") {
+		t.Errorf("expected the no-missions notice to still appear, got:\n%s", got)
+	}
+	if !strings.Contains(got, "## In plain English") {
+		t.Errorf("expected the plain-English section, got:\n%s", got)
+	}
+	if !strings.Contains(got, "worker is probably a deployable workload.") {
+		t.Errorf("expected the narrative paragraph, got:\n%s", got)
 	}
 }

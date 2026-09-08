@@ -91,13 +91,14 @@ The 5/7-Rs recommendation isn't wired in yet. See SPEC.md §10 for what's built 
 	}
 	fmt.Printf("\nWrote %s\n", situationPath)
 
-	if len(situation.Missions) > 0 {
+	if len(situation.Narratives) > 0 {
 		const missionPath = "MISSION.md"
 		if err := scan.WriteMissionMD(missionPath, situation); err != nil {
 			fmt.Fprintln(os.Stderr, "oporder scan: writing mission report failed:", err)
 			os.Exit(1)
 		}
-		fmt.Printf("Wrote %s (%d workload call(s), partial evidence — see SPEC.md §10 M2)\n", missionPath, len(situation.Missions))
+		fmt.Printf("Wrote %s (%d workload call(s), %d plain-English write-up(s))\n",
+			missionPath, len(situation.Missions), len(situation.Narratives))
 	}
 
 	if !anyRan && len(situation.Workloads) == 0 {

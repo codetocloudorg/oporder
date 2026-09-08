@@ -12,7 +12,9 @@ import (
 // workloads only) or proprietary-managed-dependency findings (any
 // workload with a matching manifest, any provider). A workload with
 // neither signal, or no correlated resource at all, is out of scope for
-// this pass, never silently omitted.
+// the table, never silently omitted — it still gets a plain-English
+// paragraph in the "In plain English" section below, which covers every
+// detected workload regardless of how much evidence exists for it.
 func WriteMissionMD(path string, s Situation) error {
 	f, err := os.Create(path)
 	if err != nil {
@@ -47,20 +49,32 @@ func WriteMissionMD(path string, s Situation) error {
 	if len(s.Missions) == 0 {
 		fmt.Fprintln(f, "No correlated workload had usable utilization or dependency evidence this")
 		fmt.Fprintln(f, "run — nothing to call yet.")
-		return nil
-	}
-
-	fmt.Fprintln(f, "| Workload | Resource | Call | Confidence | Debt trajectory | Reasoning |")
-	fmt.Fprintln(f, "|---|---|---|---|---|---|")
-	for _, m := range s.Missions {
-		call := string(m.Result.R)
-		if call == "" {
-			call = "—"
+	} else {
+		fmt.Fprintln(f, "| Workload | Resource | Call | Confidence | Debt trajectory | Reasoning |")
+		fmt.Fprintln(f, "|---|---|---|---|---|---|")
+		for _, m := range s.Missions {
+			call := string(m.Result.R)
+			if call == "" {
+				call = "—"
+			}
+			fmt.Fprintf(f, "| %s | %s | %s | %s | %s | %s |\n",
+				m.WorkloadName, m.Resource.Name, call, m.Result.Confidence, m.DebtDelta.Trajectory, m.Result.Reasoning)
 		}
-		fmt.Fprintf(f, "| %s | %s | %s | %s | %s | %s |\n",
-			m.WorkloadName, m.Resource.Name, call, m.Result.Confidence, m.DebtDelta.Trajectory, m.Result.Reasoning)
 	}
 	fmt.Fprintln(f)
+
+	if len(s.Narratives) > 0 {
+		fmt.Fprintln(f, "## In plain English")
+		fmt.Fprintln(f)
+		fmt.Fprintln(f, "The same evidence above, restated in plain language — every detected workload")
+		fmt.Fprintln(f, "gets a paragraph here, not just the ones with enough evidence for the table.")
+		fmt.Fprintln(f, "Nothing below states a fact the sections above didn't already establish; this")
+		fmt.Fprintln(f, "just says it in words instead of a table cell.")
+		fmt.Fprintln(f)
+		for _, p := range s.Narratives {
+			fmt.Fprintf(f, "**%s** (`%s`)\n\n%s\n\n", p.WorkloadName, p.WorkloadPath, p.Text)
+		}
+	}
 
 	return nil
 }
