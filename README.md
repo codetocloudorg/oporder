@@ -101,14 +101,23 @@ Discord](https://discord.gg/vwfwq2EpXJ) if you'd rather talk it through than wri
 
 The name is reserved everywhere it needs to be ahead of a real release — the domain
 ([oporder.dev](https://oporder.dev)), [npm](https://www.npmjs.com/package/oporder)
-(`oporder@0.0.1`, an honest placeholder — `npm install -g oporder` today just tells you
-there's nothing to install yet), and a [Homebrew
-tap](https://github.com/codetocloudorg/homebrew-tap) (`brew tap codetocloudorg/tap && brew
-install oporder` — same honesty, it fails with a clear message and a link to the working
-`sample-report` command rather than pretending to install a binary that doesn't exist).
-GitHub Releases will be the primary way to get the binary once one exists; npm and Homebrew
-both become real installers at the same time, for anyone who'd rather use the package manager
-they already have than download a release directly.
+(`oporder@0.0.1`), and a [Homebrew tap](https://github.com/codetocloudorg/homebrew-tap). Both
+commands below run today and honestly tell you no binary exists yet, rather than pretending
+to install one:
+
+```
+npm install -g oporder
+```
+
+```
+brew tap codetocloudorg/tap
+brew install oporder
+```
+
+GitHub Releases will be the primary way to get the binary once one exists (the release
+pipeline itself is already built and tested — see `.goreleaser.yaml` — just not triggered
+yet); npm and Homebrew both become real installers at the same time, for anyone who'd rather
+use the package manager they already have than download a release directly.
 
 ## Planned architecture
 
